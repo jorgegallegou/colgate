@@ -21,6 +21,26 @@ Se diseñó un sistema Q&A basado en técnicas de Prompt Engineering, utilizando
 
 La arquitectura del módulo 1 consolida todo el texto extraído directamente en el prompt de sistema, sin uso de embeddings ni bases de datos vectoriales (reservados para el Módulo 2).
 
+## 2.1 Alcance definido del Q&A
+
+Se definió que el asistente virtual debe poder responder preguntas de un cliente que interactúa por primera vez con la empresa, en las siguientes categorías:
+
+| Categoría | Ejemplos de preguntas |
+|---|---|
+| Historia de la empresa | Fundación, fusiones, expansión internacional |
+| Productos y marcas | Catálogo de productos, marcas disponibles en Colombia |
+| Valores corporativos | Misión, visión, principios éticos, DEI |
+| Sostenibilidad | Iniciativas ambientales, compromisos globales |
+| Presencia en Colombia | Ciudades, programas sociales, Fundación Colgate |
+| Contacto | Línea de atención, WhatsApp, sitio web |
+| Información general | Presencia global, reconocimientos, adquisiciones |
+
+**Preguntas fuera del alcance** (el sistema debe rechazarlas sin inventar):
+- Precios de productos
+- Número de empleados
+- Cotización en bolsa
+- Alianzas comerciales no documentadas
+
 ---
 
 ## 3. Preparación de los datos
@@ -96,6 +116,30 @@ Tu única fuente de información es el contexto que se te proporciona.
 - **Principio 9**: Uso de "Serás penalizado" para reforzar el cumplimiento de instrucciones
 - **Principio 17**: Delimitadores `###` para separar secciones del prompt
 - **Zero-shot**: El modelo responde sin ejemplos previos, suficiente dado el contexto rico y las instrucciones claras
+
+### 4.3 Experimentación con prompts
+
+Durante el desarrollo se probaron tres versiones del prompt de sistema:
+
+**Versión 1 — Prompt básico:**
+
+Eres un asistente de Colgate-Palmolive. Responde preguntas sobre la empresa.
+*Problema:* El modelo inventaba información no presente en el contexto (alucinaciones).
+
+**Versión 2 — Con restricciones simples:**
+Responde solo con la información del contexto. Si no sabes, di que no sabes.
+*Problema:* El modelo ignoraba la instrucción ocasionalmente y respondía con conocimiento propio.
+
+**Versión 3 — Prompt final con rol, instrucciones y penalizaciones:**
+Rol
+Instrucciones
+
+Serás penalizado si inventas...
+
+Contexto
+*Resultado:* El modelo respeta el contexto en el 100% de las pruebas realizadas.
+
+**Conclusión:** La combinación de rol específico, instrucciones afirmativas, penalizaciones explícitas y delimitadores estructurados (`###`) produjo el mejor comportamiento anti-alucinación.
 
 ### 4.3 Nota sobre el Módulo 2
 
@@ -238,6 +282,15 @@ colgate/
 └── .env                    # API keys (no incluido en repositorio)
 
 ---
+
+## 8. Limitaciones del sistema
+
+1. **Contexto limitado**: Se cargan 50.000 de 105.607 caracteres disponibles. Preguntas sobre temas en los últimos chunks pueden no responderse correctamente.
+2. **Sin memoria persistente**: El historial de conversación se pierde al reiniciar la aplicación.
+3. **Dependencia de API externa**: El sistema requiere conexión a internet y una key válida de Mistral AI.
+4. **Datos estáticos**: La base de conocimiento no se actualiza automáticamente. Requiere ejecutar nuevamente los scrapers y `chunking.py`.
+5. **Sin validación de idioma**: El sistema puede responder en inglés si el contexto de Wikipedia EN tiene mayor relevancia para la pregunta.
+6. **Módulo 1 sin RAG**: Al no usar embeddings ni búsqueda semántica, el sistema no puede recuperar chunks específicos — envía todo el contexto al modelo.
 
 *Proyecto académico · Universidad Autónoma de Occidente · 2026*
 *Los datos provienen de fuentes públicas de Colgate-Palmolive.*
