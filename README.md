@@ -318,5 +318,83 @@ colgate/
 5. **Sin validación de idioma**: El sistema puede responder en inglés si el contexto de Wikipedia EN tiene mayor relevancia para la pregunta.
 6. **Módulo 1 sin RAG**: Al no usar embeddings ni búsqueda semántica, el sistema no puede recuperar chunks específicos — envía todo el contexto al modelo.
 
+## 9. Proceso de desarrollo y desafíos técnicos
+
+Durante el desarrollo se encontraron múltiples desafíos técnicos que obligaron a tomar decisiones de arquitectura progresivas.
+
+### 9.1 Modelos locales con Ollama
+
+Se intentó inicialmente usar modelos locales a través de Ollama para evitar dependencias externas:
+
+| Modelo | Problema encontrado |
+|---|---|
+| `qwen3.5:2b` | Modo "Thinking" activado por defecto — el modelo razonaba internamente durante más de 3 minutos sin responder |
+| `gemma3:4b` | Tiempos de respuesta superiores a 2 minutos con contextos mayores a 5.000 caracteres |
+| `gemma4:e2b` | Mismo problema de modo "Thinking" — respuesta después de 60 segundos |
+
+**Causa raíz:** Los modelos locales disponibles tenían activado el modo de razonamiento extendido, incompatible con contextos largos en el hardware disponible (Windows 11, sin GPU dedicada).
+
+**Decisión:** Migrar a APIs externas para garantizar tiempos de respuesta aceptables.
+
+### 9.2 Problemas con APIs externas
+
+Se probaron múltiples proveedores antes de encontrar una solución estable:
+
+**Groq (llama-3.3-70b-versatile)**
+- ✅ Respuestas rápidas (3-5 segundos)
+- ❌ Límite de 6.000 tokens por minuto en plan gratuito
+- ❌ Límite de 100.000 tokens por día — agotado durante las pruebas
+- ❌ Contexto máximo funcional: 12.000 caracteres (3.000 tokens)
+
+**Google Gemini (gemini-2.0-flash)**
+- ❌ Cuota del plan gratuito agotada en la cuenta disponible
+- ❌ Modelo `gemini-1.5-flash` no disponible en la versión de API utilizada
+
+**OpenRouter (meta-llama/llama-3.3-70b-instruct:free)**
+- ❌ Rate limiting temporal del proveedor upstream (Venice)
+- ❌ Modelo `google/gemma-3-27b-it:free` también con rate limiting
+
+**Mistral AI (mistral-small-latest)**
+- ✅ 1 millón de tokens por mes en plan gratuito
+- ✅ Respuestas en menos de 5 segundos
+- ✅ Soporte nativo para español
+- ✅ Contexto de 50.000 caracteres sin errores
+- ✅ Sin problemas de rate limiting durante las pruebas
+
+**Decisión final:** Mistral AI como proveedor definitivo por estabilidad, generosidad del plan gratuito y calidad de respuestas.
+
+### 9.3 Problemas con el contexto
+
+El tamaño del knowledge base (105.607 caracteres) presentó desafíos al cargarse en el prompt:
+
+| Caracteres cargados | Resultado |
+|---|---|
+| 91.000 | Modelo ignoraba el contexto completamente |
+| 50.000 | Groq: error 413 (demasiados tokens) |
+| 25.000 | Groq: funcional pero agotaba cuota rápidamente |
+| 50.000 | Mistral: funcional y estable |
+
+**Solución:** Reorganizar el `knowledge_base.txt` para que Wikipedia (fuente más rica) quedara primero, garantizando que los primeros 50.000 caracteres cargados contuvieran la información más relevante.
+
+### 9.4 Problemas con Gradio 6.0
+
+La versión instalada de Gradio (6.0) introdujo cambios incompatibles con el código generado para versiones anteriores:
+
+| Problema | Solución aplicada |
+|---|---|
+| `theme` y `css` en `gr.Blocks()` deprecados | Mover parámetros a `demo.launch()` |
+| `show_copy_button` no soportado en `gr.Textbox` | Eliminar el parámetro |
+| `type="messages"` no soportado en `gr.Chatbot` | Eliminar el parámetro |
+| Historial del chatbot requiere diccionarios `{role, content}` | Reemplazar tuplas por diccionarios |
+
+### 9.5 Problema de seguridad en GitHub
+
+Al intentar subir el repositorio por primera vez, GitHub bloqueó el push porque detectó la API key de Groq hardcodeada en `app.py`. 
+
+**Solución:** 
+1. Mover todas las keys a un archivo `.env` excluido del repositorio
+2. Usar `python-dotenv` para cargar las variables de entorno
+3. Reescribir el historial de Git con `git checkout --orphan` para eliminar el commit con la key expuesta
+
 *Proyecto académico · Universidad Autónoma de Occidente · 2026*
 *Los datos provienen de fuentes públicas de Colgate-Palmolive.*
