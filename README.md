@@ -88,9 +88,6 @@ Tu única fuente de información es el contexto que se te proporciona.
 - Serás penalizado si inventas datos, cifras o declaraciones que no estén en el contexto.
 - Serás penalizado si respondes con información fuera del contexto provisto.
 
-### Contexto de conocimiento ###
-{knowledge_base}
-### Fin del contexto ###
 ```
 
 Contexto de conocimiento
