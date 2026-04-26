@@ -15,7 +15,7 @@ def load_knowledge_base() -> str:
     if not KNOWLEDGE_BASE_PATH.exists():
         return ""
     text = KNOWLEDGE_BASE_PATH.read_text(encoding="utf-8")
-    return text[:8_000]
+    return text[:15_000]
 
 KNOWLEDGE = load_knowledge_base()
 
