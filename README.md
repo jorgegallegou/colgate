@@ -90,10 +90,6 @@ Tu única fuente de información es el contexto que se te proporciona.
 
 ```
 
-Contexto de conocimiento
-{knowledge_base}
-Fin del contexto
-
 **Técnicas aplicadas según guía de Prompt Engineering:**
 - **Principio 1**: Rol específico asignado al modelo
 - **Principio 4**: Instrucciones afirmativas ("Debes responder") combinadas con restricciones explícitas
