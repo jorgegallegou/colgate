@@ -287,19 +287,23 @@ La aplicación estará disponible en `http://localhost:7860`
 
 ## 7. Estructura del repositorio
 
+```
 colgate/
-├── app.py                  # Aplicación principal Gradio + LangChain
-├── chunking.py             # Preprocesamiento y consolidación de datos
-├── scraper.py              # Scraper sitio web oficial
-├── scraper_youtube.py      # Scraper videos YouTube
-├── scraper_wikipedia.py    # Scraper Wikipedia ES + EN
-├── pyproject.toml          # Dependencias del proyecto
+├── app.py                   # Aplicación principal Gradio + LangChain
+├── chunking.py              # Preprocesamiento y consolidación de datos
+├── scraper.py               # Scraper sitio web oficial
+├── scraper_youtube.py       # Scraper videos YouTube
+├── scraper_wikipedia.py     # Scraper Wikipedia ES + EN
+├── pyproject.toml           # Dependencias del proyecto
+├── README.md                # Documentación del proyecto
+├── .gitignore               # Archivos excluidos del repositorio
 ├── data/
-│   ├── paginas_raw.json    # Datos crudos páginas web
-│   ├── youtube_raw.json    # Datos crudos YouTube
-│   ├── wikipedia_raw.json  # Datos crudos Wikipedia
-│   └── knowledge_base.txt  # Base de conocimiento consolidada
-└── .env                    # API keys (no incluido en repositorio)
+│   ├── paginas_raw.json     # Datos crudos páginas web
+│   ├── youtube_raw.json     # Datos crudos YouTube
+│   ├── wikipedia_raw.json   # Datos crudos Wikipedia
+│   └── knowledge_base.txt   # Base de conocimiento consolidada
+└── .env                     # API keys (no incluido en repositorio)
+```
 
 ---
 
