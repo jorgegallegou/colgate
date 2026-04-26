@@ -269,7 +269,9 @@ uv sync
 
 Cree un archivo `.env` en la raíz del proyecto:
 
+```
 MISTRAL_API_KEY=su_key_aquí
+```
 
 ### Uso
 
