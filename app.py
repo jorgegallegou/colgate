@@ -1,21 +1,21 @@
 import os
 import gradio as gr
 from pathlib import Path
-#from langchain_ollama import ChatOllama
-#Alternativa de solución temporal mientras se resuelve el problema de compatibilidad con la versión más reciente de langchain
 from dotenv import load_dotenv
+
 load_dotenv()
-from langchain_groq import ChatGroq
+
+from langchain_mistralai import ChatMistralAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
 KNOWLEDGE_BASE_PATH = Path("data/knowledge_base.txt")
-# MODEL_NAME = "gemma3:4b"
-MODEL_NAME = "llama-3.3-70b-versatile"
+MODEL_NAME = "mistral-small-latest"
+
 def load_knowledge_base() -> str:
     if not KNOWLEDGE_BASE_PATH.exists():
         return ""
     text = KNOWLEDGE_BASE_PATH.read_text(encoding="utf-8")
-    return text[:15_000]
+    return text[:50_000]
 
 KNOWLEDGE = load_knowledge_base()
 
@@ -36,9 +36,11 @@ Tu única fuente de información es el contexto que se te proporciona a continua
 ### Fin del contexto ###
 """
 
-#llm = ChatOllama(model=MODEL_NAME, temperature=0.3)
-
-llm = ChatGroq(model=MODEL_NAME, temperature=0.3, api_key=os.environ.get("GROQ_API_KEY"))
+llm = ChatMistralAI(
+    model=MODEL_NAME,
+    temperature=0.3,
+    api_key=os.environ.get("MISTRAL_API_KEY"),
+)
 
 def invoke_llm(system_prompt: str, user_prompt: str) -> str:
     messages = [
@@ -98,16 +100,21 @@ Con base ÚNICAMENTE en el contexto provisto, responde de forma directa y precis
     return historial, historial
 
 css = """
-.gradio-container { max-width: 900px; margin: auto; }
-.tab-nav button { font-weight: 600; }
+.gradio-container { max-width: 820px; margin: auto; }
+.tab-nav { justify-content: center !important; display: flex !important; }
+.tab-nav button { text-transform: uppercase; letter-spacing: 1.5px; font-size: 13px; }
+.tab-nav button.selected { border-bottom: 2px solid white; }
+.label-wrap span { background: transparent !important; color: #888 !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
+footer { display: none !important; }
 """
 
-with gr.Blocks(title="Q&A Colgate Palmolive") as demo:
+with gr.Blocks(title="Asistente virtual Colgate-Palmolive") as demo:
 
     gr.Markdown(f"""
-    # Sistema Q&A — Colgate-Palmolive
-    **Universidad Autónoma de Occidente · Taller 1 · Técnicas avanzadas de IA**  
-    Modelo: `{MODEL_NAME}` vía Ollama · Base de conocimiento local
+# Asistente virtual de Colgate-Palmolive
+**Universidad Autónoma de Occidente · Taller 1 · Técnicas avanzadas de IA**  
+Modelo: `{MODEL_NAME}`  
+Vía Mistral AI · Base de conocimiento local
     """)
 
     if not KNOWLEDGE:
@@ -115,7 +122,7 @@ with gr.Blocks(title="Q&A Colgate Palmolive") as demo:
 
     with gr.Tabs():
 
-        with gr.Tab("Resumen"):
+        with gr.Tab("RESUMEN"):
             gr.Markdown("Genera un resumen ejecutivo sobre cualquier aspecto de Colgate-Palmolive.")
             inp_resumen = gr.Textbox(
                 label="Tema",
@@ -123,7 +130,7 @@ with gr.Blocks(title="Q&A Colgate Palmolive") as demo:
                 lines=2
             )
             btn_resumen = gr.Button("Generar resumen", variant="primary")
-            out_resumen = gr.Textbox(label="Resumen", lines=12)
+            out_resumen = gr.Textbox(label="Resultado", lines=12)
             btn_resumen.click(tarea_resumen, inputs=inp_resumen, outputs=out_resumen)
 
         with gr.Tab("FAQ"):
@@ -134,17 +141,17 @@ with gr.Blocks(title="Q&A Colgate Palmolive") as demo:
                 lines=2
             )
             btn_faq = gr.Button("Generar FAQ", variant="primary")
-            out_faq = gr.Textbox(label="FAQ generado", lines=15)
+            out_faq = gr.Textbox(label="Resultado", lines=15)
             btn_faq.click(tarea_faq, inputs=inp_faq, outputs=out_faq)
 
         with gr.Tab("Q&A"):
             gr.Markdown("Conversación directa con el asistente sobre Colgate-Palmolive.")
-            chatbot = gr.Chatbot(label="Conversación", height=420)
+            chatbot = gr.Chatbot(label=None, height=420)
             estado = gr.State([])
             with gr.Row():
                 inp_qa = gr.Textbox(
-                    label="Tu pregunta",
-                    placeholder="¿Cuáles son los valores corporativos de Colgate-Palmolive?",
+                    label=None,
+                    placeholder="Escribe tu pregunta aquí...",
                     scale=5
                 )
                 btn_qa = gr.Button("Enviar", variant="primary", scale=1)
@@ -169,4 +176,13 @@ with gr.Blocks(title="Q&A Colgate Palmolive") as demo:
 if __name__ == "__main__":
     print(f"Knowledge base: {len(KNOWLEDGE):,} caracteres cargados")
     print(f"Modelo: {MODEL_NAME}")
-    demo.launch(share=True, theme=gr.themes.Soft(primary_hue="blue"), css=css)
+    demo.launch(
+        share=True,
+        theme=gr.themes.Base(
+            primary_hue="blue",
+            neutral_hue="slate",
+            font=gr.themes.GoogleFont("DM Sans"),
+            font_mono=gr.themes.GoogleFont("DM Mono"),
+        ),
+        css=css
+    )
