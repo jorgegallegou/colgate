@@ -123,25 +123,45 @@ Durante el desarrollo se probaron tres versiones del prompt de sistema:
 
 **Versión 1 — Prompt básico:**
 
+```
 Eres un asistente de Colgate-Palmolive. Responde preguntas sobre la empresa.
-*Problema:* El modelo inventaba información no presente en el contexto (alucinaciones).
+```
+
+❌ **Problema:** El modelo inventaba información no presente en el contexto (alucinaciones).
+
+---
 
 **Versión 2 — Con restricciones simples:**
+
+```
 Responde solo con la información del contexto. Si no sabes, di que no sabes.
-*Problema:* El modelo ignoraba la instrucción ocasionalmente y respondía con conocimiento propio.
+```
+
+❌ **Problema:** El modelo ignoraba la instrucción ocasionalmente y respondía con conocimiento propio.
+
+---
 
 **Versión 3 — Prompt final con rol, instrucciones y penalizaciones:**
-Rol
-Instrucciones
 
-Serás penalizado si inventas...
+```
+### Rol ###
+Eres un asistente virtual experto en Colgate-Palmolive Colombia.
 
-Contexto
-*Resultado:* El modelo respeta el contexto en el 100% de las pruebas realizadas.
+### Instrucciones ###
+- Debes responder ÚNICAMENTE basándote en el contexto provisto.
+- Serás penalizado si inventas datos, cifras o declaraciones.
+
+### Contexto ###
+{knowledge_base}
+```
+
+✅ **Resultado:** El modelo respeta el contexto en el 100% de las pruebas realizadas.
+
+---
 
 **Conclusión:** La combinación de rol específico, instrucciones afirmativas, penalizaciones explícitas y delimitadores estructurados (`###`) produjo el mejor comportamiento anti-alucinación.
 
-### 4.3 Nota sobre el Módulo 2
+### 4.4 Nota sobre el Módulo 2
 
 Para el Módulo 2 se implementará:
 - **Modelo de embedding**: `nomic-embed-text` o `text-embedding-3-small`
