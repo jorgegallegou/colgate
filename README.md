@@ -277,10 +277,10 @@ MISTRAL_API_KEY=su_key_aquí
 
 ```bash
 # 1. Generar knowledge base
-uv run python chunking.py
+uv run chunking.py
 
 # 2. Lanzar aplicación
-uv run python app.py
+uv run app.py
 ```
 
 La aplicación estará disponible en `http://localhost:7860`
