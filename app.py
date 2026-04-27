@@ -108,10 +108,10 @@ css = """
 footer { display: none !important; }
 """
 
-with gr.Blocks(title="Asistente virtual Colgate-Palmolive") as demo:
+with gr.Blocks(title="Sistema Q&A Colgate Palmolive") as demo:
 
     gr.Markdown(f"""
-# Asistente virtual de Colgate-Palmolive
+# Sistema Q&A Colgate Palmolive
 **Universidad Autónoma de Occidente · Taller 1 · Técnicas avanzadas de IA**  
 Modelo: `{MODEL_NAME}`  
 Vía Mistral AI · Base de conocimiento local
