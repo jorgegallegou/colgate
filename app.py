@@ -171,7 +171,12 @@ Vía Mistral AI · Base de conocimiento local
 
             btn_limpiar.click(lambda: ([], []), outputs=[chatbot, estado])
 
-    gr.Markdown("---\n*Proyecto académico · Los datos provienen de fuentes públicas de Colgate-Palmolive.*")
+    gr.Markdown("""
+---
+*Proyecto académico · Los datos provienen de fuentes públicas de Colgate-Palmolive.*
+
+*Autores: Natalia Arias · Jorge Castaño · Jhonathan Clavijo · Jorge Gallego*
+    """)
 
 if __name__ == "__main__":
     print(f"Knowledge base: {len(KNOWLEDGE):,} caracteres cargados")
