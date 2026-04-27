@@ -1,4 +1,4 @@
-# Asistente Virtual de Colgate-Palmolive
+# Sistema Q&A de Colgate-Palmolive
 **Universidad Autónoma de Occidente · Taller 1 · Técnicas avanzadas de IA**
 
 Sistema de preguntas y respuestas (Q&A) basado en inteligencia artificial, construido como base de conocimiento semántico para un futuro chatbot corporativo de Colgate-Palmolive Colombia.
