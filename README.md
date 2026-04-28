@@ -209,7 +209,7 @@ Se formularon 20 preguntas para evaluar la precisión y coherencia del sistema.
 **P11: ¿Cómo puede contactar un consumidor colombiano a Colgate-Palmolive?**
 > A través del sitio web https://www.colgatepalmolive.com.co/contact-us, la línea gratuita 018000520800 o WhatsApp al +57 317 6405757.
 
-**P12: ¿Cuáles son los valores corporativos de Colgate-Palmolive? (FAQ)**
+**P12: ¿Cuáles son los valores corporativos de Colgate-Palmolive? (Q&A)**
 > Los valores incluyen: empatía, respeto y gratitud; integridad; generosidad; confianza; pertenencia e inclusión; innovación y audacia; y compromiso con la equidad.
 
 **P13: Resumen sobre historia de Colgate-Palmolive**
@@ -218,8 +218,8 @@ Se formularon 20 preguntas para evaluar la precisión y coherencia del sistema.
 **P14: Resumen sobre productos de cuidado personal**
 > Resumen detallado de marcas y productos en higiene bucal, cuidado del cabello, cuidado de la piel, desodorantes y productos para bebé.
 
-**P15: FAQ sobre presencia de Colgate-Palmolive en Colombia**
-> Cinco preguntas sobre llegada al país, marcas disponibles, responsabilidad social, manejo de productos problemáticos y sostenibilidad.
+**P15: ¿Qué iniciativas sociales tiene Colgate-Palmolive en Colombia? (FAQ estático)**
+> La Fundación Colgate-Palmolive ha construido parques recreacionales, donado viviendas tras desastres naturales y establecido centros médicos y odontológicos. El FAQ estático incluye 10 preguntas predefinidas sobre historia, productos, valores, sostenibilidad y contacto.
 
 **P16: ¿Qué significa "crear un futuro por el que valga la pena sonreír"?**
 > Para Colgate-Palmolive significa construir un futuro más saludable para las personas, las comunidades y el planeta, mejorando el bienestar físico, fomentando la equidad y preservando el medio ambiente.
@@ -269,18 +269,16 @@ uv sync
 
 Cree un archivo `.env` en la raíz del proyecto:
 
-```
 MISTRAL_API_KEY=su_key_aquí
-```
 
 ### Uso
 
 ```bash
 # 1. Generar knowledge base
-uv run chunking.py
+uv run python chunking.py
 
 # 2. Lanzar aplicación
-uv run app.py
+uv run python app.py
 ```
 
 La aplicación estará disponible en `http://localhost:7860`
@@ -289,7 +287,6 @@ La aplicación estará disponible en `http://localhost:7860`
 
 ## 7. Estructura del repositorio
 
-```
 colgate/
 ├── app.py                   # Aplicación principal Gradio + LangChain
 ├── chunking.py              # Preprocesamiento y consolidación de datos
@@ -305,7 +302,6 @@ colgate/
 │   ├── wikipedia_raw.json   # Datos crudos Wikipedia
 │   └── knowledge_base.txt   # Base de conocimiento consolidada
 └── .env                     # API keys (no incluido en repositorio)
-```
 
 ---
 
@@ -317,6 +313,8 @@ colgate/
 4. **Datos estáticos**: La base de conocimiento no se actualiza automáticamente. Requiere ejecutar nuevamente los scrapers y `chunking.py`.
 5. **Sin validación de idioma**: El sistema puede responder en inglés si el contexto de Wikipedia EN tiene mayor relevancia para la pregunta.
 6. **Módulo 1 sin RAG**: Al no usar embeddings ni búsqueda semántica, el sistema no puede recuperar chunks específicos — envía todo el contexto al modelo.
+
+---
 
 ## 9. Proceso de desarrollo y desafíos técnicos
 
@@ -389,12 +387,14 @@ La versión instalada de Gradio (6.0) introdujo cambios incompatibles con el có
 
 ### 9.5 Problema de seguridad en GitHub
 
-Al intentar subir el repositorio por primera vez, GitHub bloqueó el push porque detectó la API key de Groq hardcodeada en `app.py`. 
+Al intentar subir el repositorio por primera vez, GitHub bloqueó el push porque detectó la API key de Groq hardcodeada en `app.py`.
 
-**Solución:** 
+**Solución:**
 1. Mover todas las keys a un archivo `.env` excluido del repositorio
 2. Usar `python-dotenv` para cargar las variables de entorno
 3. Reescribir el historial de Git con `git checkout --orphan` para eliminar el commit con la key expuesta
+
+---
 
 *Proyecto académico · Universidad Autónoma de Occidente · 2026*
 *Los datos provienen de fuentes públicas de Colgate-Palmolive.*
