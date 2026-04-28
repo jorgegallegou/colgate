@@ -65,19 +65,48 @@ El resumen debe incluir:
 Si el contexto no contiene información sobre el tema, indícalo claramente."""
     return invoke_llm(SYSTEM_BASE, prompt)
 
-def tarea_faq(area: str) -> str:
-    if not area.strip():
-        return "⚠ Por favor escribe un área o categoría."
-    prompt = f"""Con base ÚNICAMENTE en el contexto de conocimiento provisto, genera 5 preguntas frecuentes con sus respuestas sobre:
-
-ÁREA: {area}
-
-Formato:
-P: [pregunta]
-R: [respuesta basada en el contexto]
-
-Si el contexto no contiene información sobre el área, indícalo claramente."""
-    return invoke_llm(SYSTEM_BASE, prompt)
+FAQ_ESTATICO = [
+    {
+        "pregunta": "¿Cuándo fue fundada Colgate-Palmolive?",
+        "respuesta": "La empresa fue fundada en 1806 por William Colgate en Nueva York como William Colgate & Co., dedicada a la fabricación de almidón, jabones y velas."
+    },
+    {
+        "pregunta": "¿Quién fue el fundador de Colgate-Palmolive?",
+        "respuesta": "William Colgate fue el fundador. Tras su muerte en 1857, su hijo Samuel Colgate asumió la dirección y reorganizó la empresa como Colgate & Company."
+    },
+    {
+        "pregunta": "¿En cuántos países opera Colgate-Palmolive?",
+        "respuesta": "Colgate-Palmolive opera en más de 200 países y demarcaciones territoriales, siendo una de las empresas de consumo más presentes a nivel global."
+    },
+    {
+        "pregunta": "¿Qué productos ofrece Colgate-Palmolive en Colombia?",
+        "respuesta": "Ofrece productos de higiene bucal (crema dental, cepillos, hilo dental, enjuague bucal), cuidado personal (jabones, desodorantes, champús) y limpieza del hogar (Fabuloso, Suavitel, Vel Rosita)."
+    },
+    {
+        "pregunta": "¿Cuáles son los valores corporativos de Colgate-Palmolive?",
+        "respuesta": "Sus valores son: empatía, respeto y gratitud; integridad; generosidad; confianza; pertenencia e inclusión; innovación y audacia; y compromiso con la diversidad, equidad e inclusión."
+    },
+    {
+        "pregunta": "¿Qué programas sociales tiene Colgate-Palmolive en Colombia?",
+        "respuesta": "A través de la Fundación Colgate-Palmolive (creada en 1977) ha entregado 6 parques recreacionales en Cali, Popayán, Medellín, Bogotá y Cartagena, donado viviendas tras desastres naturales y establecido centros médicos y odontológicos en varias ciudades."
+    },
+    {
+        "pregunta": "¿Cuándo llegó Colgate-Palmolive a Colombia?",
+        "respuesta": "Colgate-Palmolive inició su expansión en América Latina en 1925. La Fundación Colgate-Palmolive Colombia fue creada en 1977, evidenciando una presencia consolidada en el país desde mediados del siglo XX."
+    },
+    {
+        "pregunta": "¿Cómo puede contactar a Colgate-Palmolive en Colombia?",
+        "respuesta": "A través del sitio web https://www.colgatepalmolive.com.co/contact-us, la línea gratuita 018000520800 o WhatsApp al +57 317 6405757."
+    },
+    {
+        "pregunta": "¿Qué es la Fundación Colgate-Palmolive?",
+        "respuesta": "Es una fundación creada en 1977 con misión de impulsar el desarrollo social de la comunidad colombiana, con énfasis en la niñez. Ha construido parques recreacionales, donado viviendas y establecido centros médicos y odontológicos en varias ciudades del país."
+    },
+    {
+        "pregunta": "¿Cuál es el compromiso de Colgate-Palmolive con la sostenibilidad?",
+        "respuesta": "La empresa está comprometida con preservar el medio ambiente, ha sido reconocida como una de las Compañías más Éticas del Mundo y obtuvo 100 puntos en el Índice de Equidad Corporativa. También busca que el 100% de sus empaques plásticos sean reciclables."
+    },
+]
 
 def tarea_qa(pregunta: str, historial: list) -> tuple[list, list]:
     if not pregunta.strip():
@@ -134,15 +163,11 @@ Vía Mistral AI · Base de conocimiento local
             btn_resumen.click(tarea_resumen, inputs=inp_resumen, outputs=out_resumen)
 
         with gr.Tab("FAQ"):
-            gr.Markdown("Genera preguntas frecuentes con respuestas sobre un área específica.")
-            inp_faq = gr.Textbox(
-                label="Área o categoría",
-                placeholder="Ej: medio ambiente, historia de la empresa, productos para el hogar...",
-                lines=2
-            )
-            btn_faq = gr.Button("Generar FAQ", variant="primary")
-            out_faq = gr.Textbox(label="Resultado", lines=15)
-            btn_faq.click(tarea_faq, inputs=inp_faq, outputs=out_faq)
+            gr.Markdown("Preguntas frecuentes sobre Colgate-Palmolive Colombia.")
+            for item in FAQ_ESTATICO:
+                gr.Markdown(f"**{item['pregunta']}**")
+                gr.Markdown(f"{item['respuesta']}")
+                gr.Markdown("---")
 
         with gr.Tab("Q&A"):
             gr.Markdown("Conversación directa con el asistente sobre Colgate-Palmolive.")
