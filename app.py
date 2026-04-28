@@ -129,12 +129,13 @@ Con base ÚNICAMENTE en el contexto provisto, responde de forma directa y precis
     return historial, historial
 
 css = """
-.gradio-container { max-width: 820px; margin: auto; }
+.gradio-container { max-width: 820px; min-width: 820px; margin: auto; }
 .tab-nav { justify-content: center !important; display: flex !important; }
 .tab-nav button { text-transform: uppercase; letter-spacing: 1.5px; font-size: 13px; }
 .tab-nav button.selected { border-bottom: 2px solid white; }
 .label-wrap span { background: transparent !important; color: #888 !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
 footer { display: none !important; }
+.block { min-width: 100% !important; }
 """
 
 with gr.Blocks(title="Sistema Q&A Colgate Palmolive") as demo:
