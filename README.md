@@ -16,7 +16,7 @@ Colgate-Palmolive Colombia requiere un canal de comunicación automatizado y pre
 Se diseñó un sistema Q&A basado en técnicas de Prompt Engineering, utilizando como núcleo una base de conocimiento semántico construida a partir de fuentes públicas de la empresa. El sistema permite tres tipos de interacción:
 
 - **Resumen ejecutivo**: generación de resúmenes estructurados sobre cualquier aspecto de la empresa
-- **FAQ**: generación automática de preguntas frecuentes con respuestas basadas en el contexto
+- **FAQ estático**: listado de 10 preguntas frecuentes predefinidas con sus respuestas, basadas en el conocimiento extraído durante el scraping
 - **Q&A conversacional**: conversación directa con memoria de los últimos turnos
 
 La arquitectura del módulo 1 consolida todo el texto extraído directamente en el prompt de sistema, sin uso de embeddings ni bases de datos vectoriales (reservados para el Módulo 2).
