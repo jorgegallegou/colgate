@@ -136,6 +136,7 @@ css = """
 .label-wrap span { background: transparent !important; color: #888 !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
 footer { display: none !important; }
 .block { min-width: 100% !important; }
+.tabitem { min-height: 600px !important; }
 """
 
 with gr.Blocks(title="Sistema Q&A Colgate Palmolive") as demo:
