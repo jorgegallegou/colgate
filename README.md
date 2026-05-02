@@ -88,7 +88,7 @@ El archivo `knowledge_base.txt` resultante tiene 122.013 caracteres. Para el pro
 | Modelo | `mistral-small-latest` |
 | Framework | LangChain |
 | Temperatura | 0.3 |
-| Contexto máximo | 50.000 caracteres |
+| Contexto máximo | 80.000 caracteres |
 
 Se eligió Mistral AI porque ofrece acceso gratuito con límites generosos (1 millón de tokens por mes), respuestas en menos de 5 segundos y soporte nativo para español. La temperatura de 0.3 garantiza respuestas precisas con naturalidad suficiente.
 
