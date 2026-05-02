@@ -20,7 +20,6 @@ URLS_OBJETIVO = {
     "fundacion":         "https://www.colgatepalmolive.com.co/fundacion-colgate",
     "politicas":         "https://www.colgatepalmolive.com.co/our-policies",
     "comunidad":         "https://www.colgatepalmolive.com.co/community-impact",
-    "sustentabilidad":   "https://www.colgatepalmolive.com/en-us/sustainability",
     "historia_colombia": "https://www.valoraanalitik.com/historia-de-colgate-palmolive-en-colombia/",
     "operacion_cali":    "https://www.elpais.com.co/economia/asi-ha-consolidado-operaciones-en-cali-la-multinacional-colgate-seguimos-creyendo-en-la-economia-y-en-el-pais-dice-su-gerente-1015.html",
     "contacto":          "https://www.colgatepalmolive.com.co/contact-us",
@@ -29,6 +28,19 @@ URLS_OBJETIVO = {
     "larepublica_80años":"https://www.larepublica.co/empresas/la-compania-colgate-palmolive-en-colombia-celebro-80-anos-operando-en-la-industria-3670490",
     "medellin":          "https://www.medellin.gov.co/es/secretaria-de-comunicaciones/obras-y-mejoramientos-de-escenarios-deportivos-de-medellin/obras-y-mejoramientos-en-la-zona-2-de-medellin/obras-y-mejoramientos-en-la-comuna-5-castilla/colgate-palmolive/",
     "mapasocial":        "http://mapasocial.dps.gov.co/organizaciones/111",
+    "gobernanza":               "https://www.colgatepalmolive.com.co/who-we-are/governance",
+    "codigo_conducta":          "https://www.colgatepalmolive.com.co/who-we-are/governance/code-of-conduct",
+    "linea_etica":              "https://www.colgatepalmolive.com.co/who-we-are/governance/ethics-line",
+    "politica_donaciones":      "https://www.colgatepalmolive.com.co/who-we-are/our-policies/donation-policy",
+    "gestion_respeto":          "https://www.colgatepalmolive.com.co/who-we-are/our-policies/managing-with-respect",
+    "igualdad_oportunidades":   "https://www.colgatepalmolive.com.co/who-we-are/our-policies/equal-opportunity-employer-info",
+    "valoracion_personas":      "https://www.colgatepalmolive.com.co/who-we-are/our-policies/valuing-colgate-people",
+    "historias_comunidades":    "https://www.colgatepalmolive.com.co/who-we-are/stories/communities",
+    "sonrisas_brillantes":      "https://www.colgatepalmolive.com.co/community-impact/bright-smiles-bright-futures",
+    "global_quienes_somos":     "https://www.colgatepalmolive.com/en-us/who-we-are",
+    "global_comunidad":         "https://www.colgatepalmolive.com/en-us/community-impact",
+    "global_sostenibilidad":    "https://www.colgatepalmolive.com/en-us/sustainability",
+    "portafolio_colgate":       "https://www.portafolio.co/negocios/empresas/colgate-palmolive-colombia-historia-787234",
 }
 
 # ── Configuración ──────────────────────────────────────────────────────────────
@@ -153,7 +165,7 @@ def ejecutar_scraping():
 def es_contenido_valido(texto: str, nombre: str) -> bool:
     """Descarta páginas con demasiado ruido o muy poco contenido útil."""
     # Demasiado largo probablemente es ruido (cookies, publicidad)
-    if len(texto) > 20000:
+    if len(texto) > 80000:
         print(f"  ⚠ [{nombre}] Descartado por exceso de ruido ({len(texto):,} chars)")
         return False
     # Muy corto no tiene información útil
