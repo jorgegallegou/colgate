@@ -287,6 +287,7 @@ La aplicación estará disponible en `http://localhost:7860`
 
 ## 7. Estructura del repositorio
 
+```
 colgate/
 ├── app.py                   # Aplicación principal Gradio + LangChain
 ├── chunking.py              # Preprocesamiento y consolidación de datos
@@ -302,6 +303,7 @@ colgate/
 │   ├── wikipedia_raw.json   # Datos crudos Wikipedia
 │   └── knowledge_base.txt   # Base de conocimiento consolidada
 └── .env                     # API keys (no incluido en repositorio)
+```
 
 ---
 
@@ -396,5 +398,15 @@ Al intentar subir el repositorio por primera vez, GitHub bloqueó el push porque
 
 ---
 
+## Repositorio
+[https://github.com/jorgegallegou/colgate](https://github.com/jorgegallegou/colgate)
+
+## Autores
+- Natalia Arias Londoño
+- Jorge Castaño López
+- Jhonathan Leandro Clavijo Troches
+- Jorge Mario Gallego Uribe
+
+---
 *Proyecto académico · Universidad Autónoma de Occidente · 2026*
-*Los datos provienen de fuentes públicas de Colgate-Palmolive.*
+*Los datos provienen de fuentes públicas de Colgate-Palmolive.*  
