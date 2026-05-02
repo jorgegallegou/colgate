@@ -51,7 +51,7 @@ Se desarrollaron tres scrapers independientes:
 
 | Archivo | Fuente | Herramientas | Registros |
 |---|---|---|---|
-| `scraper.py` | Sitio web oficial Colgate-Palmolive Colombia | Selenium + BeautifulSoup + requests | 14 páginas |
+| `scraper.py` | Sitio web oficial Colgate-Palmolive Colombia | Selenium + BeautifulSoup + requests | 26 páginas |
 | `scraper_youtube.py` | Canal YouTube corporativo | yt-dlp | 23 videos |
 | `scraper_wikipedia.py` | Wikipedia ES + EN | requests + BeautifulSoup | 2 artículos |
 
@@ -70,11 +70,11 @@ El script `chunking.py` realiza las siguientes operaciones:
 | Fuente | Chunks | Orden de carga |
 |---|---|---|
 | Wikipedia | 27 | 1° (más rica en contexto histórico) |
-| Páginas web | 55 | 2° |
+| Páginas web | 87 | 2° |
 | YouTube | 23 | 3° |
-| **Total** | **105** | — |
+| **Total** | **137** | — |
 
-El archivo `knowledge_base.txt` resultante tiene 105.607 caracteres. Para el prompt de sistema se cargan los primeros 50.000 caracteres, priorizando Wikipedia por su riqueza informativa.
+El archivo `knowledge_base.txt` resultante tiene 122.013 caracteres. Para el prompt de sistema se cargan los primeros 80.000 caracteres, priorizando Wikipedia por su riqueza informativa.
 
 ---
 
@@ -358,7 +358,7 @@ Se probaron múltiples proveedores antes de encontrar una solución estable:
 - ✅ 1 millón de tokens por mes en plan gratuito
 - ✅ Respuestas en menos de 5 segundos
 - ✅ Soporte nativo para español
-- ✅ Contexto de 50.000 caracteres sin errores
+- ✅ Contexto de 80.000 caracteres sin errores
 - ✅ Sin problemas de rate limiting durante las pruebas
 
 **Decisión final:** Mistral AI como proveedor definitivo por estabilidad, generosidad del plan gratuito y calidad de respuestas.
@@ -372,9 +372,9 @@ El tamaño del knowledge base (105.607 caracteres) presentó desafíos al cargar
 | 91.000 | Modelo ignoraba el contexto completamente |
 | 50.000 | Groq: error 413 (demasiados tokens) |
 | 25.000 | Groq: funcional pero agotaba cuota rápidamente |
-| 50.000 | Mistral: funcional y estable |
+| 80.000 | Mistral: funcional y estable |
 
-**Solución:** Reorganizar el `knowledge_base.txt` para que Wikipedia (fuente más rica) quedara primero, garantizando que los primeros 50.000 caracteres cargados contuvieran la información más relevante.
+**Solución:** Reorganizar el `knowledge_base.txt` para que Wikipedia quedara primero, y aumentar progresivamente el contexto hasta 80.000 caracteres con Mistral AI.
 
 ### 9.4 Problemas con Gradio 6.0
 
