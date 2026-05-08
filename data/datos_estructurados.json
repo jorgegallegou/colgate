@@ -1,0 +1,33 @@
+{
+  "contacto": {
+    "linea_consumidor": "01-8000-520-800",
+    "linea_odontologo": "01-8000-423-833",
+    "whatsapp": "+57 317 6405757",
+    "sitio_web": "https://www.colgatepalmolive.com.co",
+    "pagina_contacto": "https://www.colgatepalmolive.com.co/contact-us"
+  },
+  "horarios_atencion": {
+    "general": "Lunes a viernes: 8:00 AM - 5:00 PM"
+  },
+  "informacion_corporativa": {
+    "nombre_legal": "Colgate Palmolive Compañía",
+    "nit": "890300546-6",
+    "numero_matricula": "6785",
+    "camara_de_comercio": "Cali",
+    "estado": "Activa",
+    "direccion": "Carrera 1era 40-108, Cali, Colombia"
+  },
+  "marcas_colombia": [
+    "Colgate (higiene bucal)",
+    "Palmolive Naturals (cuidado personal)",
+    "Hill's Pet Nutrition (nutrición para mascotas)",
+    "Speed Stick (desodorantes masculinos)",
+    "Lady Speed Stick (desodorantes femeninos)",
+    "Ajax (limpieza del hogar)",
+    "Suavitel (suavizantes de ropa)",
+    "Fabuloso (limpiadores multiusos)",
+    "Protex (jabones antibacteriales)",
+    "Axion (lavaplatos)",
+    "Tu Hogar (productos del hogar)"
+  ]
+}
