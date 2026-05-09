@@ -23,7 +23,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | UI-03 | Alta | ✅ Corregido | **Sidebar con información de debug**: textos técnicos internos expuestos al usuario. → Reemplazado por guía de uso ("¿Qué puedo preguntar?"). |
 | UI-04 | Media | ✅ Corregido | **Demasiados `st.divider()`**: 4 divisores en un sidebar con poco contenido. → Reducido a 2. |
 | UI-05 | Media | ✅ Corregido | **ID de sesión expuesto**: UUID truncado sin utilidad para el usuario. → Eliminado. |
-| UI-06 | Media | Pendiente | **Sin avatar personalizado**: los avatares de `st.chat_message` usan los genéricos de Streamlit. |
+| UI-06 | Media | ✅ Corregido | **Sin avatar personalizado**: los avatares de `st.chat_message` usaban los genéricos de Streamlit. → Logo corporativo (`assets/logo.png`) como avatar del asistente; emoji `👤` para el usuario. CSS actualizado para cubrir el selector `stChatMessageAvatarImage`. |
 | UI-07 | Baja | ✅ Corregido | **Descripción de herramientas plana**: el sidebar no orientaba al usuario sobre qué preguntar. → Reemplazado por lista de temas consultables. |
 | BUG-01 | Media | ✅ Corregido | **Detección de error frágil**: matching de strings sobre el mensaje de excepción. → Reemplazado por centinelas tipados (`ERROR_GENERICO`, `ERROR_RATE_LIMIT`). |
 | BUG-02 | Baja | ✅ Corregido | **Línea en blanco con espacios en línea 1**: causaba warnings en linters. → Eliminada en reescritura del archivo. |
@@ -102,7 +102,6 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | # | Severidad | Descripción |
 |---|-----------|-------------|
-| UI-06 | Media | Avatar personalizado en burbujas de chat |
 | TLS-02 | Baja | Fallback semántico en `buscar_en_datos_estructurados` |
 | TLS-03 | Baja | `_cache` fallback silencioso en ejecución CLI |
 | DEP-01 | Media | Evaluar separar dependencias de scraping en grupo opcional de `pyproject.toml` |

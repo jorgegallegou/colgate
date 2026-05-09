@@ -12,7 +12,10 @@ def _logo_b64() -> str:
         return base64.b64encode(p.read_bytes()).decode()
     return ""
 
-LOGO_B64 = _logo_b64()
+LOGO_B64    = _logo_b64()
+LOGO_PATH   = Path("assets/logo.png")
+AVATAR_BOT  = LOGO_PATH if LOGO_PATH.exists() else "🦷"
+AVATAR_USER = "👤"
 
 BIENVENIDA = (
     "¡Hola! Soy el asistente virtual de **Colgate-Palmolive Colombia**. "
@@ -55,8 +58,9 @@ h1 {
     font-weight: 700 !important;
 }
 
-/* Burbuja del asistente */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+/* Burbuja del asistente — cubre avatar estándar y avatar imagen personalizada */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]),
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarImage"]) {
     background: #F4F6FA;
     border-left: 3px solid #E31837;
     border-radius: 0 8px 8px 0;
@@ -121,20 +125,21 @@ st.divider()
 
 # ── Historial ──────────────────────────────────────────────────────────────────
 if not st.session_state.mensajes:
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=AVATAR_BOT):
         st.markdown(BIENVENIDA)
 
 for msg in st.session_state.mensajes:
-    with st.chat_message(msg["role"]):
+    avatar = AVATAR_BOT if msg["role"] == "assistant" else AVATAR_USER
+    with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
 
 # ── Input ──────────────────────────────────────────────────────────────────────
 if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=AVATAR_USER):
         st.markdown(pregunta)
     st.session_state.mensajes.append({"role": "user", "content": pregunta})
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=AVATAR_BOT):
         with st.spinner("Consultando..."):
             respuesta = preguntar(pregunta, st.session_state.thread_id)
 
@@ -142,13 +147,11 @@ if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
             msg = "El servicio está temporalmente saturado. Espera unos segundos e intenta de nuevo."
             st.warning(msg)
             respuesta = f"⏱️ {msg}"
-            # Resetear thread para evitar acumulación de mensajes sin respuesta en MemorySaver
             st.session_state.thread_id = nueva_sesion()
         elif respuesta == ERROR_GENERICO:
             msg = "Lo siento, ocurrió un error al procesar tu pregunta. Por favor intenta de nuevo."
             st.error(msg)
             respuesta = msg
-            # Resetear thread para evitar acumulación de mensajes sin respuesta en MemorySaver
             st.session_state.thread_id = nueva_sesion()
         else:
             st.markdown(respuesta)
