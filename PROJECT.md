@@ -59,6 +59,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | PRM-01 | Alta | ✅ Corregido | **Código muerto**: `AGENT_PROMPT_TEMPLATE` y `AGENT_PROMPT` (PromptTemplate) nunca se importaban. → Archivo refactorizado: exporta solo `SYSTEM_PROMPT` como string puro compatible con LangGraph. |
 | PRM-02 | Media | ✅ Corregido | **Variables incompatibles con LangGraph**: `{history}`, `{tools}`, `{agent_scratchpad}` son del patrón `initialize_agent` clásico. → Eliminadas; LangGraph gestiona el historial y el scratchpad internamente. |
 | **BUG-NEW-03** | **Alta** | ✅ Corregido | **Agente reportaba "no hay información" sobre sostenibilidad**: el agente usaba solo `base_documental` (RAG) y, al no recuperar chunks relevantes de sostenibilidad ambiental, concluía que no existía información — ignorando que `datos_estructurados.json` sí contiene esos datos. → Agregada instrucción de fallback: "Si la primera herramienta no devuelve información suficiente, prueba con la otra antes de concluir que no hay información." |
+| **PRM-03** | **Media** | ✅ Corregido | **Criterio de selección ambiguo**: `sostenibilidad` y `programas sociales` aparecían listados como categorías de `datos_estructurados` en una sección y omitidos del criterio de selección en otra, causando enrutamiento inconsistente. → Criterio reescrito basado en el **tipo de respuesta esperada** (dato puntual vs. explicación narrativa), eliminando listas de categorías por tema. Añadido segundo ejemplo de razonamiento ReAct para preguntas de seguimiento con memoria. |
 
 ---
 
@@ -90,6 +91,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 |---|-----------|--------|----------|
 | DOC-01 | Media | ✅ Corregido | **Diagrama de arquitectura en ASCII**: el diagrama de flujo era un bloque de arte ASCII que GitHub mostraba como texto plano sin estructura visual. → Reemplazado por un diagrama `flowchart TD` en Mermaid, que GitHub renderiza automáticamente como imagen interactiva. |
 | DOC-02 | Baja | ✅ Corregido | **Razonamiento del agente documentado solo en README**: las pruebas mostraban el ciclo ReAct como texto estático. → Ahora el razonamiento es visible en tiempo real en la UI (UI-08); actualizado el aviso en la sección de pruebas del README. |
+| DOC-03 | Baja | ✅ Corregido | **Meta-prompt desactualizado en sección 10.3**: el snippet del criterio de selección reflejaba la versión anterior del prompt (listas por tema). → Actualizado al criterio actual basado en tipo de respuesta esperada, incluyendo el segundo ejemplo de razonamiento con memoria. `clean_knowledge_base.py` agregado a la estructura del repositorio. |
 
 ---
 
@@ -103,6 +105,7 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
+| *(pendiente)* | docs: actualizar README sección 10.3 y registrar PRM-03 en PROJECT.md (DOC-03) |
 | *(pendiente)* | fix/feat: suprimir warnings transformers `__path__` (TLS-05) y spinner de carga inicial (UI-09) |
 | `c0bc12a` | fix: corregir TLS-02 — keyword matching tiene prioridad sobre FAQ scoring |
 | `6add79b` | feat: docstrings, razonamiento ReAct en UI y diagrama Mermaid |
@@ -133,8 +136,9 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 | `app_v2.py` | Interfaz Streamlit (activa) |
 | `agent.py` | Agente LangGraph con memoria y centinelas de error |
 | `tools.py` | RAG FAISS + datos estructurados con normalización unicode |
-| `prompts.py` | System prompt del agente con criterio de fallback |
+| `prompts.py` | System prompt del agente con criterio de selección por tipo de respuesta |
 | `build_vectorstore.py` | Script de construcción del índice FAISS |
+| `clean_knowledge_base.py` | Limpieza y re-chunking de knowledge_base.txt para FAISS |
 | `.streamlit/config.toml` | Tema corporativo Streamlit |
 | `data/vectorstore/` | Índice FAISS (137 chunks) |
 | `data/datos_estructurados.json` | Datos de contacto, horarios, sedes, marcas, etc. |

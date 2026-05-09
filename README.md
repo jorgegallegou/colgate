@@ -411,8 +411,8 @@ def _normalizar(texto: str) -> str:
 
 def buscar_en_datos_estructurados(pregunta: str) -> str:
     q = _normalizar(pregunta)
-    # 1. Busca en FAQs por solapamiento de palabras
-    # 2. Detecta intención por palabras clave normalizadas
+    # 1. Detecta intención por palabras clave normalizadas (prioridad)
+    # 2. FAQs como fallback por solapamiento de palabras con stopwords filtradas
     # 3. Retorna datos del JSON correspondiente
 ```
 
@@ -423,25 +423,37 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
 
 ### 10.3 Meta-prompt de selección de herramientas
 
-El agente decide qué herramienta usar basándose en el system prompt (`prompts.py`):
+El agente decide qué herramienta usar basándose en el system prompt (`prompts.py`). El criterio está basado en el **tipo de respuesta esperada**, no en el tema de la pregunta:
 
 ```
 ### CRITERIO DE SELECCIÓN ###
-- Usa "datos_estructurados" para datos puntuales: teléfono, horario, NIT,
-  dirección, sede, marca, sitio web o red social.
-- Usa "base_documental" para preguntas narrativas o de contexto general.
-- Ante la duda entre las dos herramientas, prefiere "base_documental".
+Usa "datos_estructurados" si la pregunta espera un dato puntual como respuesta:
+  un número, una fecha, una dirección, un nombre legal, una lista corta.
+  Ejemplos: teléfono, horario, NIT, sede, marca, sitio web, redes sociales.
+
+Usa "base_documental" si la pregunta espera una explicación o contexto:
+  historia, valores, cultura, operaciones, estrategia, noticias,
+  descripción de productos, programas sociales, sostenibilidad, fundación.
+
+Si la primera herramienta no devuelve información suficiente, prueba con la otra.
+Usa el historial de la conversación para responder preguntas de seguimiento
+sin llamar herramientas innecesariamente.
 
 ### EJEMPLO DE RAZONAMIENTO ###
 Usuario: ¿Cuál es el horario de atención?
-Thought: La pregunta pide un dato concreto, uso "datos_estructurados".
+Thought: La pregunta espera un dato puntual, uso "datos_estructurados".
 [llama a datos_estructurados]
-Respuesta: El horario de atención es: línea telefónica de lunes a viernes...
+Respuesta: El horario de atención es...
+
+Usuario: ¿Y cuándo llegaron al país?
+Thought: La respuesta anterior ya mencionó que llegaron en 1943.
+         Puedo responder desde el historial sin llamar herramientas.
+Respuesta: Colgate-Palmolive llegó a Colombia en 1943, estableciéndose en Cartagena.
 ```
 
 **Técnicas de Prompt Engineering aplicadas:**
 - **Principio 1**: Rol específico al inicio del prompt
-- **Principio 7**: Few-shot con ejemplo de ciclo ReAct completo
+- **Principio 7**: Few-shot con dos ejemplos del ciclo ReAct completo (incluyendo uso de memoria)
 - **Principio 8**: Delimitadores `###` para separar secciones
 - **Principio 9**: "Serás penalizado" para reforzar restricciones
 - **Principio 19**: Chain-of-Thought implícito en el formato ReAct
@@ -633,12 +645,13 @@ colgate/
 │
 ├── app.py                   # Interfaz Gradio — Módulo 1 (referencia)
 ├── chunking.py              # Preprocesamiento y consolidación de datos
+├── clean_knowledge_base.py  # Limpieza y re-chunking para FAISS
 ├── scraper.py               # Scraper sitio web oficial
 ├── scraper_youtube.py       # Scraper videos YouTube
 ├── scraper_wikipedia.py     # Scraper Wikipedia ES + EN
 │
 ├── data/
-│   ├── vectorstore/         # Índice FAISS (generado por build_vectorstore.py)
+│   ├── vectorstore/              # Índice FAISS (generado por build_vectorstore.py)
 │   ├── datos_estructurados.json  # Datos de contacto, horarios, sedes, etc.
 │   ├── knowledge_base_clean.txt  # Knowledge base procesada para FAISS
 │   ├── knowledge_base.txt        # Knowledge base del Módulo 1
@@ -664,7 +677,7 @@ colgate/
 
 1. **Memoria volátil**: `MemorySaver` guarda el estado en RAM; un reinicio del servidor borra todas las conversaciones activas.
 2. **Keyword matching limitado**: `datos_estructurados` detecta intención por palabras clave; preguntas muy paráfraseadas pueden no clasificarse correctamente.
-3. **Carga inicial lenta**: la primera visita al browser tarda ~5-10 s mientras se carga el modelo de embeddings en memoria; las visitas siguientes son instantáneas. Un spinner informa al usuario durante esta espera. La visualización del razonamiento ReAct (herramienta seleccionada + resultado recuperado) está disponible bajo cada respuesta en el expander "🧠 Ver razonamiento del agente".
+3. **Carga inicial lenta**: la primera visita al browser tarda ~5-10 s mientras se carga el modelo de embeddings en memoria; las visitas siguientes son instantáneas. Un spinner informa al usuario durante esta espera.
 4. **Dependencia de API externa**: requiere conexión a internet y key válida de Mistral AI.
 5. **Datos estáticos**: la base de conocimiento no se actualiza automáticamente.
 
