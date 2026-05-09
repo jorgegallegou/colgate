@@ -263,38 +263,39 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 
 ```mermaid
 flowchart TD
-    U(["👤 Usuario"]) -->|pregunta| APP
+    U(["👤 Usuario"])
+    U -->|pregunta| APP
 
-    subgraph APP["📱 app_v2.py — Streamlit Chat"]
-        UI["Historial de mensajes"]
-        EXP["🧠 Ver razonamiento — st.expander"]
+    subgraph APP["📱 app_v2.py — Streamlit"]
+        APP1["Historial · razonamiento · thread_id UUID"]
     end
 
-    APP -->|"pregunta + thread_id UUID"| AGT
-    MEM[("💾 MemorySaver\nHistorial por sesión")] <-->|checkpointer| AGT
-    SYS["📄 prompts.py\nSystem Prompt"] --> AGT
+    SYS["📄 prompts.py"] -->|system prompt| AGT
+    MEM[("💾 MemorySaver")] <-->|lectura / escritura| AGT
+
+    APP -->|"pregunta + thread_id"| AGT
 
     subgraph AGT["🤖 agent.py — Agente ReAct · LangGraph"]
-        DEC{"Router ReAct\nThought: ¿qué herramienta?"}
+        DEC{"Router: ¿qué herramienta usar?"}
     end
 
-    DEC -->|"pregunta narrativa\n(historia, valores, productos)"| T1
+    DEC -->|"pregunta narrativa"| T1
+    DEC -->|"dato puntual"| T2
 
-    subgraph T1["📚 base_documental — tools.py"]
-        FAISS["FAISS VectorDB\n137 chunks · top-4\nRAG semántico"]
+    subgraph T1["📚 base_documental"]
+        F["FAISS · 137 chunks · top-4"]
     end
 
-    DEC -->|"dato concreto\n(teléfono, horario, NIT, sedes)"| T2
-
-    subgraph T2["📋 datos_estructurados — tools.py"]
-        JSON["JSON determinista\n10 FAQs + 8 categorías\nkeyword matching"]
+    subgraph T2["📋 datos_estructurados"]
+        J["JSON determinista · keyword matching"]
     end
 
-    T1 -->|"Observation: chunks relevantes"| LLM["☁️ Mistral AI\nmistral-small-latest · T=0.3"]
-    T2 -->|"Observation: dato exacto"| LLM
+    T1 -->|chunks relevantes| LLM
+    T2 -->|dato exacto| LLM
 
-    LLM -->|respuesta final| APP
-    APP -->|"burbuja asistente\n+ razonamiento expandible"| U
+    LLM["☁️ mistral-small-latest · T=0.3"]
+    LLM -->|respuesta| APP
+    APP -->|respuesta al usuario| U
 ```
 
 ### 8.2 Comparación Módulo 1 vs Módulo 2
