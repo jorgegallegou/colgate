@@ -8,7 +8,7 @@
 
 ## Resumen ejecutivo
 
-El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramientas) pero la interfaz web (`app_v2.py`) perdió toda la identidad visual que tenía la versión anterior (`app.py`). El resultado es una pantalla genérica de Streamlit sin colores corporativos, sin logo, sin jerarquía visual y con información de debug expuesta al usuario final.
+El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramientas) pero la interfaz web (`app_v2.py`) perdió toda la identidad visual que tenía la versión anterior (`app.py`). El resultado era una pantalla genérica de Streamlit sin colores corporativos, sin logo, sin jerarquía visual y con información de debug expuesta al usuario final. Todos los issues de Prioridad 1 y 2 han sido corregidos.
 
 ---
 
@@ -16,97 +16,92 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 ### 1. `app_v2.py` — Interfaz principal
 
-| # | Severidad | Problema |
-|---|-----------|----------|
-| UI-01 | Alta | **Sin identidad de marca**: no hay logo, no hay colores Colgate (rojo `#E31837`, azul `#003DA5`). La app usa el tema gris por defecto de Streamlit. |
-| UI-02 | Alta | **Sin mensaje de bienvenida**: el chat arranca vacío, sin contexto ni instrucciones para el usuario. |
-| UI-03 | Alta | **Sidebar con información de debug**: los textos "Modelo: mistral-small-latest", "Memoria: LangGraph MemorySaver", "RAG: FAISS + HuggingFace" son detalles técnicos internos que no aportan valor al usuario final y se ven como logs de desarrollo. |
-| UI-04 | Media | **Demasiados `st.divider()`**: se usan 4 veces en el sidebar, lo que fragmenta visualmente un panel que tiene poco contenido. |
-| UI-05 | Media | **ID de sesión expuesto**: mostrar el UUID de sesión (truncado con `...`) no tiene utilidad para el usuario. |
-| UI-06 | Media | **Sin icono/avatar personalizado en los mensajes**: los avatares de `st.chat_message` usan los genéricos de Streamlit ("user" y "assistant") sin personalización. |
-| UI-07 | Baja | **Descripción de herramientas plana**: los íconos 📄 y 🗂️ están bien, pero el texto no orienta al usuario sobre qué preguntas puede hacer. |
-| BUG-01 | Media | **Detección de error frágil**: `if "429" in respuesta or "capacity exceeded" in respuesta` hace matching de strings sobre el mensaje de excepción. Si el LLM cambia el formato del error o devuelve el código en otro idioma, la condición nunca se cumple. |
-| BUG-02 | Baja | **Línea en blanco con espacios en línea 1**: el archivo comienza con una línea vacía que contiene un espacio (`    \n`), lo que puede causar warnings en algunos linters. |
+| # | Severidad | Estado | Problema |
+|---|-----------|--------|----------|
+| UI-01 | Alta | ✅ Corregido | **Sin identidad de marca**: no había logo ni colores Colgate. → CSS corporativo inyectado con `#E31837` y `#091D30`; logo cargado desde `assets/logo.png`. |
+| UI-02 | Alta | ✅ Corregido | **Sin mensaje de bienvenida**: el chat arrancaba vacío. → Mensaje de bienvenida mostrado automáticamente cuando `mensajes` está vacío. |
+| UI-03 | Alta | ✅ Corregido | **Sidebar con información de debug**: textos técnicos internos expuestos al usuario. → Reemplazado por guía de uso ("¿Qué puedo preguntar?"). |
+| UI-04 | Media | ✅ Corregido | **Demasiados `st.divider()`**: 4 divisores en un sidebar con poco contenido. → Reducido a 2. |
+| UI-05 | Media | ✅ Corregido | **ID de sesión expuesto**: UUID truncado sin utilidad para el usuario. → Eliminado. |
+| UI-06 | Media | Pendiente | **Sin avatar personalizado**: los avatares de `st.chat_message` usan los genéricos de Streamlit. |
+| UI-07 | Baja | ✅ Corregido | **Descripción de herramientas plana**: el sidebar no orientaba al usuario sobre qué preguntar. → Reemplazado por lista de temas consultables. |
+| BUG-01 | Media | ✅ Corregido | **Detección de error frágil**: matching de strings sobre el mensaje de excepción. → Mejorado con manejo tipado y `str().lower()`. |
+| BUG-02 | Baja | ✅ Corregido | **Línea en blanco con espacios en línea 1**: causaba warnings en linters. → Eliminada en reescritura del archivo. |
 
 ---
 
 ### 2. `.streamlit/config.toml` — Configuración del tema
 
-| # | Severidad | Problema |
-|---|-----------|----------|
-| CFG-01 | Alta | **Sin sección `[theme]`**: el archivo solo tiene `[runner]` y `[logger]`. Streamlit usa el tema predeterminado (gris claro/oscuro), que es lo que hace que la interfaz se vea genérica. Aquí deberían definirse `primaryColor`, `backgroundColor`, `font`, etc. |
-| CFG-02 | Baja | `fastRerenderEnabled = false` ralentiza la respuesta visual de la UI al usuario. |
+| # | Severidad | Estado | Problema |
+|---|-----------|--------|----------|
+| CFG-01 | Alta | ✅ Corregido | **Sin sección `[theme]`**: Streamlit usaba el tema gris por defecto. → Agregada sección `[theme]` con `primaryColor = "#E31837"`, `backgroundColor`, `secondaryBackgroundColor` y `textColor`. |
+| CFG-02 | Baja | ✅ Corregido | `fastRerenderEnabled = false` ralentizaba la UI. → Opción eliminada (fue removida de Streamlit en versiones recientes; su presencia causaba un warning de config inválida al arrancar). |
 
 ---
 
 ### 3. `agent.py` — Lógica del agente
 
-| # | Severidad | Problema |
-|---|-----------|----------|
-| AGT-01 | Media | **`SYSTEM_PROMPT` duplicado**: `agent.py` define su propio `SYSTEM_PROMPT` hardcodeado. El archivo `prompts.py` existe precisamente para centralizar el prompt pero **nunca se importa**. |
-| AGT-02 | Baja | **Excepción genérica expuesta al usuario**: `return f"Error al procesar la pregunta: {str(e)}"` puede filtrar mensajes de error técnicos (stack traces, URLs de API, API keys en variables de entorno). Debería logearse internamente y retornar un mensaje genérico al usuario. |
+| # | Severidad | Estado | Problema |
+|---|-----------|--------|----------|
+| AGT-01 | Media | ✅ Corregido | **`SYSTEM_PROMPT` duplicado**: `agent.py` lo definía inline ignorando `prompts.py`. → Ahora importa `SYSTEM_PROMPT` desde `prompts.py`. |
+| AGT-02 | Baja | ✅ Corregido | **Excepción técnica expuesta al usuario**: `str(e)` podía filtrar API keys o stack traces. → Errores logueados con `logging.error(..., exc_info=True)`; usuario recibe mensaje genérico. |
 
 ---
 
 ### 4. `prompts.py` — Plantilla del prompt
 
-| # | Severidad | Problema |
-|---|-----------|----------|
-| PRM-01 | Alta | **Código muerto**: `AGENT_PROMPT_TEMPLATE` y `AGENT_PROMPT` están definidos y documentados, pero **no se importan en ningún archivo**. El archivo es completamente ignorado en tiempo de ejecución. |
-| PRM-02 | Media | **Variables incompatibles con LangGraph**: el template usa `{history}`, `{tools}`, `{tool_names}`, `{agent_scratchpad}` — variables propias del patrón `initialize_agent` de LangChain clásico. `create_react_agent` de LangGraph maneja el scratchpad y el historial internamente; esas variables generarían un error si se usara el template. |
+| # | Severidad | Estado | Problema |
+|---|-----------|--------|----------|
+| PRM-01 | Alta | ✅ Corregido | **Código muerto**: `AGENT_PROMPT_TEMPLATE` y `AGENT_PROMPT` nunca se importaban. → Archivo refactorizado: exporta solo `SYSTEM_PROMPT` como string puro. |
+| PRM-02 | Media | ✅ Corregido | **Variables incompatibles con LangGraph**: `{history}`, `{tools}`, `{agent_scratchpad}` son del patrón `initialize_agent` clásico, incompatibles con `create_react_agent`. → Eliminadas; LangGraph gestiona el historial y el scratchpad internamente. |
 
 ---
 
 ### 5. `tools.py` — Herramientas del agente
 
-| # | Severidad | Problema |
-|---|-----------|----------|
-| TLS-01 | Media | **Matching de palabras clave frágil**: `buscar_en_datos_estructurados` usa listas de strings hardcodeadas para detectar la intención (`"teléfono"`, `"horario"`, etc.). Variaciones semánticas como "¿me dan un número de contacto?" o "¿cuándo abren?" no se detectan. |
-| TLS-02 | Baja | **Sin fallback semántico**: cuando el matching de keywords falla, retorna "No encontré un dato estructurado..." pero no intenta una búsqueda semántica en los datos. El agente podría quedarse sin respuesta en casos simples. |
-| TLS-03 | Baja | **`_cache` fallback silencioso**: si Streamlit no está disponible (ejecución desde CLI), el decorador `_cache` se reemplaza por una función que no hace nada. Cada llamada a `_cargar_recursos()` recargaría el modelo de embeddings. En la práctica esto no ocurre porque el módulo se carga una vez, pero podría volverse un bug si se refactorizara. |
+| # | Severidad | Estado | Problema |
+|---|-----------|--------|----------|
+| TLS-01 | Media | ✅ Corregido | **Matching de palabras clave frágil**: listas hardcodeadas con variantes acentuadas y sin acentuar duplicadas. → Reemplazado por función `_normalizar()` con `unicodedata` que elimina tildes antes del matching; listas de keywords depuradas y ampliadas. |
+| TLS-02 | Baja | Pendiente | **Sin fallback semántico**: si el matching falla, no intenta búsqueda semántica. |
+| TLS-03 | Baja | Pendiente | **`_cache` fallback silencioso** en ejecución CLI sin Streamlit. |
+| **BUG-NEW-01** | **Alta** | ✅ Corregido | **`UnicodeEncodeError` en consola Windows**: los `print()` con emojis (`🔧`, `✓`) dentro de `_cargar_recursos()` causaban un crash al iniciar la app en Windows (codificación cp1252). La excepción ocurría dentro del decorador `@st.cache_resource`, impidiendo cargar el vectorstore y bloqueando el arranque completo. → Emojis eliminados de los `print()`. |
 
 ---
 
 ### 6. `pyproject.toml` — Dependencias
 
-| # | Severidad | Problema |
-|---|-----------|----------|
-| DEP-01 | Media | **Dependencias no utilizadas**: `gradio`, `selenium`, `trafilatura`, `webdriver-manager` y `yt-dlp` están en el lock file pero `app_v2.py` no los usa. Son vestigios del taller anterior. Aumentan el tiempo de instalación y el tamaño del entorno. |
-| DEP-02 | Baja | `requires-python = ">=3.14"` es Python 3.14 (en prerelease a mayo 2026). Si se despliega en un servidor con 3.11 o 3.12, el install fallará. Debería ser `>=3.11`. |
+| # | Severidad | Estado | Problema |
+|---|-----------|--------|----------|
+| DEP-01 | Media | Pendiente | **Dependencias no utilizadas por la app**: `gradio`, `selenium`, `trafilatura`, `webdriver-manager`, `yt-dlp`. Nota: se mantienen porque los scripts de scraping (`scraper.py`, `scraper_youtube.py`) las requieren para reconstruir la knowledge base. |
+| DEP-02 | Baja | ✅ Corregido | `requires-python = ">=3.14"` demasiado restrictivo (Python 3.14 en prerelease). → Corregido a `>=3.11`. |
 
 ---
 
 ### 7. `app.py` vs `app_v2.py` — Regresión visual
 
-La versión `app.py` (Gradio) tenía:
-- Logo de Colgate en base64 embebido
-- Sidebar con CSS personalizado y colores corporativos (#091D30 de fondo, #003DA5 como acento)
-- Tipografía Sora importada desde Google Fonts
-- FAQ con tarjetas estilizadas
-- Panel de resumen ejecutivo
-- Footer oculto
+La versión `app.py` (Gradio) tenía: logo embebido, sidebar con CSS corporativo, tipografía Sora, FAQ con tarjetas, panel de resumen y footer oculto.
 
-La versión `app_v2.py` (Streamlit) elimina **todo** lo anterior y no lo reemplaza por ningún estilo equivalente. El salto a Streamlit fue correcto (mejor soporte para chat con historial), pero se perdió completamente la identidad visual.
+La versión `app_v2.py` (Streamlit) eliminó todo lo anterior. El salto a Streamlit fue correcto (mejor soporte para chat con historial), pero se perdió la identidad visual. **Issue resuelto en commit `d7df437`.**
 
 ---
 
-## Plan de mejoras recomendado
+## Historial de cambios
 
-### Prioridad 1 — Identidad visual (impacto inmediato)
-1. Agregar sección `[theme]` en `.streamlit/config.toml` con colores Colgate
-2. Inyectar logo y CSS corporativo vía `st.markdown(..., unsafe_allow_html=True)` o `st.image()`
-3. Eliminar info de debug del sidebar; reemplazar por guía de uso para el usuario
-4. Agregar mensaje de bienvenida al inicio del chat
+| Commit | Descripción |
+|--------|-------------|
+| `d7df437` | feat: rediseño visual corporativo y mejoras de código |
+| `32850b3` | fix: corregir UnicodeEncodeError en consola Windows y config obsoleta |
 
-### Prioridad 2 — Bugs y lógica
-5. Reemplazar detección de errores por manejo tipado de excepciones
-6. Importar y usar `prompts.py` en `agent.py`, o eliminar el archivo muerto
-7. Separar logging de errores internos del mensaje que ve el usuario
+---
 
-### Prioridad 3 — Mantenimiento
-8. Remover dependencias no utilizadas de `pyproject.toml`
-9. Corregir `requires-python` a `>=3.11`
-10. Mejorar `buscar_en_datos_estructurados` con embeddings semánticos en lugar de keywords
+## Issues pendientes
+
+| # | Severidad | Descripción |
+|---|-----------|-------------|
+| UI-06 | Media | Avatar personalizado en burbujas de chat |
+| TLS-02 | Baja | Fallback semántico en `buscar_en_datos_estructurados` |
+| TLS-03 | Baja | `_cache` fallback silencioso en ejecución CLI |
+| DEP-01 | Media | Evaluar si separar dependencias de scraping en un grupo opcional |
 
 ---
 
@@ -117,7 +112,7 @@ La versión `app_v2.py` (Streamlit) elimina **todo** lo anterior y no lo reempla
 | `app_v2.py` | Interfaz Streamlit (activa) |
 | `agent.py` | Agente LangGraph con memoria |
 | `tools.py` | RAG FAISS + datos estructurados |
-| `prompts.py` | Plantilla de prompt (actualmente sin uso) |
+| `prompts.py` | System prompt del agente |
 | `build_vectorstore.py` | Script de construcción del índice FAISS |
 | `.streamlit/config.toml` | Configuración del tema de Streamlit |
 | `data/` | Vectorstore FAISS + JSON de datos estructurados |
