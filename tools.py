@@ -63,25 +63,11 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
     horarios, NIT, sedes, marcas, programas sociales y sostenibilidad."""
     q = _normalizar(pregunta)
 
-    # Buscar en FAQs por solapamiento de palabras
-    faqs = _datos_estructurados.get("preguntas_frecuentes", [])
-    mejor_faq = None
-    mejor_score = 0
-    for faq in faqs:
-        palabras_q   = set(q.split())
-        palabras_faq = set(_normalizar(faq["pregunta"]).split())
-        score = len(palabras_q & palabras_faq)
-        if score > mejor_score:
-            mejor_score = score
-            mejor_faq = faq
-    if mejor_faq and mejor_score >= 2:
-        return mejor_faq["respuesta"]
+    # ── 1. Palabras clave específicas primero (prioridad sobre FAQs) ───────────
+    # El orden importa: las categorías más específicas se evalúan antes para
+    # evitar que el scoring de FAQs devuelva la categoría equivocada.
 
-    if any(p in q for p in ["telefono", "llamar", "linea", "numero", "contacto", "comunicar"]):
-        c = _datos_estructurados["contacto"]
-        return f"Línea gratuita: {c['linea_gratuita']} | WhatsApp: {c['whatsapp']}"
-
-    if any(p in q for p in ["horario", "hora", "atienden", "atencion", "abierto", "cuando abren"]):
+    if any(p in q for p in ["horario", "hora", "atienden", "abierto", "cuando abren"]):
         h = _datos_estructurados["horarios_atencion"]
         return (
             f"Línea telefónica: {h['linea_telefonica']}\n"
@@ -89,7 +75,7 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
             f"Chat web: {h['chat_web']}"
         )
 
-    if any(p in q for p in ["nit", "registro", "legal", "razon social", "nombre legal"]):
+    if any(p in q for p in ["nit", "registro", "razon social", "nombre legal"]):
         ci = _datos_estructurados["informacion_corporativa"]
         return f"Nombre legal: {ci['nombre_legal']} | NIT: {ci['nit']}"
 
@@ -121,6 +107,26 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
             f"Facebook: {rs['facebook']}\n"
             f"Instagram: {rs['instagram']}"
         )
+
+    if any(p in q for p in ["telefono", "llamar", "linea", "numero", "contacto", "comunicar", "atencion"]):
+        c = _datos_estructurados["contacto"]
+        return f"Línea gratuita: {c['linea_gratuita']} | WhatsApp: {c['whatsapp']}"
+
+    # ── 2. FAQs como fallback cuando no hubo match de categoría ───────────────
+    faqs = _datos_estructurados.get("preguntas_frecuentes", [])
+    mejor_faq = None
+    mejor_score = 0
+    STOPWORDS = {"cual", "es", "el", "la", "de", "en", "un", "una", "los", "las",
+                 "del", "al", "y", "o", "que", "con", "por", "su", "se"}
+    for faq in faqs:
+        palabras_q   = set(_normalizar(pregunta).split()) - STOPWORDS
+        palabras_faq = set(_normalizar(faq["pregunta"]).split()) - STOPWORDS
+        score = len(palabras_q & palabras_faq)
+        if score > mejor_score:
+            mejor_score = score
+            mejor_faq = faq
+    if mejor_faq and mejor_score >= 2:
+        return mejor_faq["respuesta"]
 
     return "No encontré un dato estructurado específico para esa pregunta."
 
