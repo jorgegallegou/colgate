@@ -35,6 +35,10 @@ agente = create_react_agent(
     checkpointer=checkpointer,
 )
 
+# Centinelas para que app_v2.py detecte el tipo de error sin acoplar strings
+ERROR_GENERICO   = "__ERROR__"
+ERROR_RATE_LIMIT = "__RATE_LIMIT__"
+
 # ── Función pública ────────────────────────────────────────────────────────────
 def preguntar(pregunta: str, thread_id: str) -> str:
     config = {"configurable": {"thread_id": thread_id}}
@@ -46,7 +50,10 @@ def preguntar(pregunta: str, thread_id: str) -> str:
         return resultado["messages"][-1].content
     except Exception as e:
         logger.error("Error en agente [thread=%s]: %s", thread_id, e, exc_info=True)
-        return "Lo siento, ocurrió un error al procesar tu pregunta. Por favor intenta de nuevo."
+        err = str(e).lower()
+        if any(k in err for k in ("429", "rate", "capacity", "quota", "limit")):
+            return ERROR_RATE_LIMIT
+        return ERROR_GENERICO
 
 
 def nueva_sesion() -> str:

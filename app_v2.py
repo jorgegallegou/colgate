@@ -3,7 +3,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from agent import preguntar, nueva_sesion
+from agent import preguntar, nueva_sesion, ERROR_GENERICO, ERROR_RATE_LIMIT
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def _logo_b64() -> str:
@@ -138,15 +138,18 @@ if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
         with st.spinner("Consultando..."):
             respuesta = preguntar(pregunta, st.session_state.thread_id)
 
-        try:
-            status = int(str(respuesta).split()[0]) if str(respuesta)[0].isdigit() else 0
-        except (ValueError, IndexError):
-            status = 0
-
-        if "429" in str(respuesta) or "capacity exceeded" in str(respuesta).lower() or status == 429:
-            msg_usuario = "El servicio está temporalmente saturado. Espera unos segundos e intenta de nuevo."
-            st.warning(msg_usuario)
-            respuesta = f"⏱️ {msg_usuario}"
+        if respuesta == ERROR_RATE_LIMIT:
+            msg = "El servicio está temporalmente saturado. Espera unos segundos e intenta de nuevo."
+            st.warning(msg)
+            respuesta = f"⏱️ {msg}"
+            # Resetear thread para evitar acumulación de mensajes sin respuesta en MemorySaver
+            st.session_state.thread_id = nueva_sesion()
+        elif respuesta == ERROR_GENERICO:
+            msg = "Lo siento, ocurrió un error al procesar tu pregunta. Por favor intenta de nuevo."
+            st.error(msg)
+            respuesta = msg
+            # Resetear thread para evitar acumulación de mensajes sin respuesta en MemorySaver
+            st.session_state.thread_id = nueva_sesion()
         else:
             st.markdown(respuesta)
 
