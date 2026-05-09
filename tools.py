@@ -14,6 +14,8 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.tools import Tool
 
+from config import EMBEDDING_MODEL, VECTORSTORE_PATH, RAG_TOP_K
+
 # Por si el logger ya fue inicializado antes de leer el env var
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
@@ -25,10 +27,7 @@ except Exception:
         return fn
 
 # ── Configuración ──────────────────────────────────────────────────────────────
-VECTORSTORE_PATH = Path("data/vectorstore")
-STRUCTURED_PATH  = Path("data/datos_estructurados.json")
-EMBEDDING_MODEL  = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-RAG_TOP_K        = 4
+STRUCTURED_PATH = Path("data/datos_estructurados.json")
 
 def _normalizar(texto: str) -> str:
     """Elimina tildes y pasa a minúsculas para matching robusto."""

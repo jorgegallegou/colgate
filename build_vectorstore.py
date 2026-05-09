@@ -1,13 +1,12 @@
-import os
 from pathlib import Path
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
+from config import EMBEDDING_MODEL, VECTORSTORE_PATH
+
 # ── Configuración ──────────────────────────────────────────────────────────────
 KNOWLEDGE_BASE_PATH = Path("data/knowledge_base_clean.txt")
-VECTORSTORE_PATH    = Path("data/vectorstore")
-EMBEDDING_MODEL     = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 # ── Cargar y parsear chunks ────────────────────────────────────────────────────
 def cargar_chunks(path: Path) -> list[Document]:
@@ -50,34 +49,34 @@ def cargar_chunks(path: Path) -> list[Document]:
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print(f"📂 Cargando knowledge base desde: {KNOWLEDGE_BASE_PATH}")
+    print(f"Cargando knowledge base desde: {KNOWLEDGE_BASE_PATH}")
     documentos = cargar_chunks(KNOWLEDGE_BASE_PATH)
     print(f"✓ {len(documentos)} chunks cargados")
 
-    print(f"\n🤖 Cargando modelo de embeddings: {EMBEDDING_MODEL}")
+    print(f"\nCargando modelo de embeddings: {EMBEDDING_MODEL}")
     print("   (Primera vez descarga ~420MB — puede tardar unos minutos)")
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,
         model_kwargs={"device": "cpu"},
         encode_kwargs={"normalize_embeddings": True},
     )
-    print("✓ Modelo cargado")
+    print("Modelo cargado")
 
-    print(f"\n⚙️  Construyendo índice FAISS...")
+    print("\nConstruyendo indice FAISS...")
     vectorstore = FAISS.from_documents(documentos, embeddings)
-    print(f"✓ Índice construido con {vectorstore.index.ntotal} vectores")
+    print(f"Indice construido con {vectorstore.index.ntotal} vectores")
 
-    print(f"\n💾 Guardando vectorstore en: {VECTORSTORE_PATH}")
+    print(f"\nGuardando vectorstore en: {VECTORSTORE_PATH}")
     VECTORSTORE_PATH.mkdir(parents=True, exist_ok=True)
     vectorstore.save_local(str(VECTORSTORE_PATH))
-    print("✓ Vectorstore guardado")
+    print("Vectorstore guardado")
 
     # Prueba rápida de retrieval
-    print("\n🔍 Prueba de retrieval:")
+    print("\nPrueba de retrieval:")
     query = "¿Cuál es la planta de producción de Colgate en Colombia?"
     resultados = vectorstore.similarity_search(query, k=3)
     for i, r in enumerate(resultados, 1):
         print(f"\n  Resultado {i} [{r.metadata['titulo']}]:")
         print(f"  {r.page_content[:120]}...")
 
-    print("\n✅ Vectorstore listo para usar.")
+    print("\nVectorstore listo para usar.")
