@@ -25,6 +25,7 @@ def _normalizar(texto: str) -> str:
 # ── Carga de recursos con caché de Streamlit ───────────────────────────────────
 @_cache
 def _cargar_recursos():
+    """Carga embeddings, vectorstore FAISS y JSON estructurado una sola vez (caché Streamlit)."""
     print("Cargando herramientas del agente...")
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,
@@ -44,6 +45,7 @@ _embeddings, _vectorstore, _datos_estructurados = _cargar_recursos()
 
 # ── Tool 1: RAG ────────────────────────────────────────────────────────────────
 def buscar_en_base_documental(pregunta: str) -> str:
+    """Recupera los top-K chunks más similares del vectorstore FAISS con sus metadatos de fuente."""
     resultados = _vectorstore.similarity_search(pregunta, k=RAG_TOP_K)
     if not resultados:
         return "No se encontró información relevante en la base documental."
@@ -56,6 +58,9 @@ def buscar_en_base_documental(pregunta: str) -> str:
 
 # ── Tool 2: Datos estructurados ────────────────────────────────────────────────
 def buscar_en_datos_estructurados(pregunta: str) -> str:
+    """Busca datos concretos en el JSON estructurado mediante keyword matching normalizado.
+    No usa vectorstore: la recuperación es determinista y siempre precisa para datos de contacto,
+    horarios, NIT, sedes, marcas, programas sociales y sostenibilidad."""
     q = _normalizar(pregunta)
 
     # Buscar en FAQs por solapamiento de palabras

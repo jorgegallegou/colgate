@@ -3,7 +3,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from agent import preguntar, nueva_sesion, ERROR_GENERICO, ERROR_RATE_LIMIT
+from agent import preguntar_con_pasos, nueva_sesion, ERROR_GENERICO, ERROR_RATE_LIMIT
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def _logo_b64() -> str:
@@ -140,7 +140,7 @@ if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
 
     with st.chat_message("assistant", avatar=AVATAR_BOT):
         with st.spinner("Consultando..."):
-            respuesta = preguntar(pregunta, st.session_state.thread_id)
+            respuesta, pasos = preguntar_con_pasos(pregunta, st.session_state.thread_id)
 
         if respuesta == ERROR_RATE_LIMIT:
             msg = "El servicio está temporalmente saturado. Espera unos segundos e intenta de nuevo."
@@ -154,5 +154,16 @@ if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
             st.session_state.thread_id = nueva_sesion()
         else:
             st.markdown(respuesta)
+            if pasos:
+                with st.expander("🧠 Ver razonamiento del agente"):
+                    for j, paso in enumerate(pasos):
+                        if paso["tipo"] == "accion":
+                            st.markdown(f"**🔧 Herramienta seleccionada:** `{paso['herramienta']}`")
+                            st.caption(f"Consulta enviada: {paso['entrada']}")
+                        else:
+                            st.markdown("**📋 Información recuperada:**")
+                            st.code(paso["contenido"], language="text")
+                        if j < len(pasos) - 1:
+                            st.divider()
 
     st.session_state.mensajes.append({"role": "assistant", "content": respuesta})

@@ -9,6 +9,9 @@ from langgraph.prebuilt import create_react_agent
 from prompts import SYSTEM_PROMPT
 from tools import TOOLS
 
+# Pasos del ciclo ReAct que se muestran en la UI
+_Paso = dict  # {"tipo": "accion"|"observacion", ...}
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -39,8 +42,47 @@ agente = create_react_agent(
 ERROR_GENERICO   = "__ERROR__"
 ERROR_RATE_LIMIT = "__RATE_LIMIT__"
 
-# ── Función pública ────────────────────────────────────────────────────────────
+
+# ── Helpers internos ───────────────────────────────────────────────────────────
+def _extraer_pasos(messages: list) -> list[_Paso]:
+    """Extrae los pasos del ciclo ReAct (tool calls + observations) del turno actual.
+
+    Busca el último HumanMessage y devuelve solo los pasos posteriores a él,
+    evitando incluir razonamientos de turnos anteriores almacenados en MemorySaver.
+    """
+    # Encontrar el índice del último mensaje humano (= pregunta actual)
+    last_human = -1
+    for i, msg in enumerate(messages):
+        if getattr(msg, "type", None) == "human" or type(msg).__name__ == "HumanMessage":
+            last_human = i
+
+    if last_human == -1:
+        return []
+
+    pasos: list[_Paso] = []
+    for msg in messages[last_human + 1:]:
+        # AIMessage con tool_calls → acción del agente
+        if getattr(msg, "tool_calls", None):
+            for tc in msg.tool_calls:
+                args = tc.get("args", {})
+                entrada = args.get("__arg1") or args.get("input") or str(args)
+                pasos.append({
+                    "tipo": "accion",
+                    "herramienta": tc.get("name", "desconocida"),
+                    "entrada": str(entrada)[:400],
+                })
+        # ToolMessage → observación (resultado de la herramienta)
+        elif hasattr(msg, "tool_call_id") and hasattr(msg, "content"):
+            pasos.append({
+                "tipo": "observacion",
+                "contenido": str(msg.content)[:600],
+            })
+    return pasos
+
+
+# ── Funciones públicas ─────────────────────────────────────────────────────────
 def preguntar(pregunta: str, thread_id: str) -> str:
+    """Envía una pregunta al agente y devuelve la respuesta o un centinela de error."""
     config = {"configurable": {"thread_id": thread_id}}
     try:
         resultado = agente.invoke(
@@ -56,8 +98,31 @@ def preguntar(pregunta: str, thread_id: str) -> str:
         return ERROR_GENERICO
 
 
+def preguntar_con_pasos(pregunta: str, thread_id: str) -> tuple[str, list[_Paso]]:
+    """Igual que preguntar(), pero también devuelve los pasos del razonamiento ReAct.
+
+    Returns:
+        (respuesta, pasos) — pasos es una lista vacía si no se usaron herramientas
+        (centinela, [])    — ante cualquier error
+    """
+    config = {"configurable": {"thread_id": thread_id}}
+    try:
+        resultado = agente.invoke(
+            {"messages": [{"role": "user", "content": pregunta}]},
+            config=config,
+        )
+        pasos = _extraer_pasos(resultado["messages"])
+        return resultado["messages"][-1].content, pasos
+    except Exception as e:
+        logger.error("Error en agente [thread=%s]: %s", thread_id, e, exc_info=True)
+        err = str(e).lower()
+        if any(k in err for k in ("429", "rate", "capacity", "quota", "limit")):
+            return ERROR_RATE_LIMIT, []
+        return ERROR_GENERICO, []
+
+
 def nueva_sesion() -> str:
-    """Genera un nuevo UUID para iniciar una sesión limpia."""
+    """Genera un UUID v4 para iniciar una sesión de conversación independiente."""
     return str(uuid.uuid4())
 
 

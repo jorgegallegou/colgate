@@ -261,42 +261,40 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 
 ### 8.1 Diagrama de flujo
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    INTERFAZ — app_v2.py                     │
-│              Streamlit · Chat con historial                 │
-└────────────────────────┬────────────────────────────────────┘
-                         │ pregunta + thread_id (UUID sesión)
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│               AGENTE ReAct — agent.py                       │
-│         LangGraph · create_react_agent                      │
-│                                                             │
-│  ┌──────────────┐    ┌──────────────────────────────────┐   │
-│  │  MemorySaver │    │   System Prompt (prompts.py)     │   │
-│  │  (por sesión │◄──►│   ROL + HERRAMIENTAS + CRITERIO  │   │
-│  │   thread_id) │    │   DE SELECCIÓN + EJEMPLO ReAct   │   │
-│  └──────────────┘    └──────────────────────────────────┘   │
-│                                                             │
-│         Thought: ¿qué herramienta usar?                     │
-│              ┌──────────┴──────────┐                        │
-│              ▼                     ▼                        │
-│   ┌──────────────────┐  ┌─────────────────────────┐         │
-│   │  base_documental │  │   datos_estructurados   │         │
-│   │  FAISS VectorDB  │  │   JSON determinista     │         │
-│   │  RAG semántico   │  │   keyword matching      │         │
-│   │  137 chunks      │  │   10 FAQs + 8 categ.    │         │
-│   └────────┬─────────┘  └───────────┬─────────────┘         │
-│            └──────────┬─────────────┘                       │
-│                       │ Observation (contexto recuperado)   │
-│                       ▼                                     │
-│              Mistral AI · mistral-small-latest              │
-│              Temperatura 0.3 · Español formal               │
-└───────────────────────┬─────────────────────────────────────┘
-                        │ Respuesta final
-                        ▼
-                   Streamlit UI
-              (burbuja "assistant")
+```mermaid
+flowchart TD
+    U(["👤 Usuario"]) -->|pregunta| APP
+
+    subgraph APP["📱 app_v2.py — Streamlit Chat"]
+        UI["Historial de mensajes"]
+        EXP["🧠 Ver razonamiento — st.expander"]
+    end
+
+    APP -->|"pregunta + thread_id UUID"| AGT
+    MEM[("💾 MemorySaver\nHistorial por sesión")] <-->|checkpointer| AGT
+    SYS["📄 prompts.py\nSystem Prompt"] --> AGT
+
+    subgraph AGT["🤖 agent.py — Agente ReAct · LangGraph"]
+        DEC{"Router ReAct\nThought: ¿qué herramienta?"}
+    end
+
+    DEC -->|"pregunta narrativa\n(historia, valores, productos)"| T1
+
+    subgraph T1["📚 base_documental — tools.py"]
+        FAISS["FAISS VectorDB\n137 chunks · top-4\nRAG semántico"]
+    end
+
+    DEC -->|"dato concreto\n(teléfono, horario, NIT, sedes)"| T2
+
+    subgraph T2["📋 datos_estructurados — tools.py"]
+        JSON["JSON determinista\n10 FAQs + 8 categorías\nkeyword matching"]
+    end
+
+    T1 -->|"Observation: chunks relevantes"| LLM["☁️ Mistral AI\nmistral-small-latest · T=0.3"]
+    T2 -->|"Observation: dato exacto"| LLM
+
+    LLM -->|respuesta final| APP
+    APP -->|"burbuja asistente\n+ razonamiento expandible"| U
 ```
 
 ### 8.2 Comparación Módulo 1 vs Módulo 2
@@ -662,7 +660,7 @@ colgate/
 
 1. **Memoria volátil**: `MemorySaver` guarda el estado en RAM; un reinicio del servidor borra todas las conversaciones activas.
 2. **Keyword matching limitado**: `datos_estructurados` detecta intención por palabras clave; preguntas muy paráfraseadas pueden no clasificarse correctamente.
-3. **Sin visualización de thoughts en UI**: el razonamiento ReAct (Thought/Action/Observation) ocurre internamente; la interfaz muestra solo la respuesta final.
+3. **Visualización de thoughts opcional**: el razonamiento ReAct (herramienta seleccionada + resultado recuperado) se muestra bajo cada respuesta en un `st.expander` colapsable ("🧠 Ver razonamiento del agente"). Solo aparece cuando el agente invocó al menos una herramienta.
 4. **Dependencia de API externa**: requiere conexión a internet y key válida de Mistral AI.
 5. **Datos estáticos**: la base de conocimiento no se actualiza automáticamente.
 
