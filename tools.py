@@ -1,4 +1,5 @@
 import json
+import unicodedata
 from pathlib import Path
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -17,9 +18,11 @@ STRUCTURED_PATH  = Path("data/datos_estructurados.json")
 EMBEDDING_MODEL  = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 RAG_TOP_K        = 4
 
+def _normalizar(texto: str) -> str:
+    """Elimina tildes y pasa a minúsculas para matching robusto."""
+    return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode().lower()
+
 # ── Carga de recursos con caché de Streamlit ───────────────────────────────────
-# @st.cache_resource garantiza que el modelo y vectorstore se cargan
-# UNA SOLA VEZ aunque Streamlit recargue el script.
 @_cache
 def _cargar_recursos():
     print("🔧 Cargando herramientas del agente...")
@@ -53,26 +56,27 @@ def buscar_en_base_documental(pregunta: str) -> str:
 
 # ── Tool 2: Datos estructurados ────────────────────────────────────────────────
 def buscar_en_datos_estructurados(pregunta: str) -> str:
-    pregunta_lower = pregunta.lower()
+    q = _normalizar(pregunta)
 
+    # Buscar en FAQs por solapamiento de palabras
     faqs = _datos_estructurados.get("preguntas_frecuentes", [])
     mejor_faq = None
     mejor_score = 0
     for faq in faqs:
-        palabras_pregunta = set(pregunta_lower.split())
-        palabras_faq      = set(faq["pregunta"].lower().split())
-        score = len(palabras_pregunta & palabras_faq)
+        palabras_q   = set(q.split())
+        palabras_faq = set(_normalizar(faq["pregunta"]).split())
+        score = len(palabras_q & palabras_faq)
         if score > mejor_score:
             mejor_score = score
             mejor_faq = faq
     if mejor_faq and mejor_score >= 2:
         return mejor_faq["respuesta"]
 
-    if any(p in pregunta_lower for p in ["teléfono", "telefono", "llamar", "línea", "linea", "número", "numero"]):
+    if any(p in q for p in ["telefono", "llamar", "linea", "numero", "contacto", "comunicar"]):
         c = _datos_estructurados["contacto"]
         return f"Línea gratuita: {c['linea_gratuita']} | WhatsApp: {c['whatsapp']}"
 
-    if any(p in pregunta_lower for p in ["horario", "hora", "atienden", "atención", "atencion", "abierto"]):
+    if any(p in q for p in ["horario", "hora", "atienden", "atencion", "abierto", "cuando abren"]):
         h = _datos_estructurados["horarios_atencion"]
         return (
             f"Línea telefónica: {h['linea_telefonica']}\n"
@@ -80,19 +84,19 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
             f"Chat web: {h['chat_web']}"
         )
 
-    if any(p in pregunta_lower for p in ["nit", "registro", "legal", "razón social", "razon social"]):
+    if any(p in q for p in ["nit", "registro", "legal", "razon social", "nombre legal"]):
         ci = _datos_estructurados["informacion_corporativa"]
         return f"Nombre legal: {ci['nombre_legal']} | NIT: {ci['nit']}"
 
-    if any(p in pregunta_lower for p in ["sede", "oficina", "dirección", "direccion", "ubicación", "ubicacion", "planta", "ciudad"]):
+    if any(p in q for p in ["sede", "oficina", "direccion", "ubicacion", "planta", "ciudad"]):
         sedes = _datos_estructurados["sedes_colombia"]
         return "\n".join(f"- {s['ciudad']}: {s['tipo']} ({s['direccion']})" for s in sedes)
 
-    if any(p in pregunta_lower for p in ["marca", "producto", "vende", "comercializa"]):
+    if any(p in q for p in ["marca", "producto", "vende", "comercializa", "catalogo"]):
         marcas = _datos_estructurados["marcas_principales_colombia"]
         return "Marcas en Colombia: " + ", ".join(marcas)
 
-    if any(p in pregunta_lower for p in ["fundación", "fundacion", "social", "programa", "sonrisa", "parque"]):
+    if any(p in q for p in ["fundacion", "social", "programa", "sonrisa", "parque", "comunidad"]):
         ps = _datos_estructurados["programas_sociales"]
         return (
             f"{ps['fundacion']} (fundada en {ps['año_creacion_fundacion']}). "
@@ -100,11 +104,11 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
             f"Ha donado {ps['parques_donados']}."
         )
 
-    if any(p in pregunta_lower for p in ["sostenibilidad", "ambiente", "ambiental", "reciclable", "carbono"]):
+    if any(p in q for p in ["sostenibilidad", "ambiente", "ambiental", "reciclable", "carbono", "ecologico"]):
         s = _datos_estructurados["sostenibilidad"]
         return f"{s['meta_empaques']}. {s['compromiso_ambiental']}."
 
-    if any(p in pregunta_lower for p in ["web", "sitio", "página", "pagina", "instagram", "facebook", "red social"]):
+    if any(p in q for p in ["web", "sitio", "pagina", "instagram", "facebook", "red social", "internet"]):
         c = _datos_estructurados["contacto"]
         rs = c["redes_sociales"]
         return (

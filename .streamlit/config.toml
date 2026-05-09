@@ -1,5 +1,12 @@
 [runner]
-fastRerenderEnabled = false
+fastRerenderEnabled = true
 
 [logger]
 level = "error"
+
+[theme]
+primaryColor = "#E31837"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6FA"
+textColor = "#1A1A2E"
+font = "sans serif"
