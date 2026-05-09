@@ -66,7 +66,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
 | TLS-01 | Media | ✅ Corregido | **Matching de palabras clave frágil**: listas hardcodeadas con variantes acentuadas y sin acentuar duplicadas. → Función `_normalizar()` con `unicodedata` elimina tildes antes del matching; listas depuradas y ampliadas. |
-| TLS-02 | Baja | Pendiente | **Sin fallback semántico en datos_estructurados**: si el keyword matching falla, no intenta búsqueda semántica sobre el JSON. Mitigado parcialmente por BUG-NEW-03. |
+| TLS-02 | Baja | ✅ Corregido | **Keyword matching devolvía categoría equivocada**: el scoring de FAQs usaba solapamiento de palabras sin filtrar stopwords, haciendo que preguntas de horario devolvieran la FAQ de teléfono. → Las categorías con palabras clave específicas se evalúan primero; las FAQs actúan como fallback con stopwords filtradas y score mínimo >= 2. |
 | TLS-03 | Baja | Pendiente | **`_cache` fallback silencioso** en ejecución CLI sin Streamlit. |
 | TLS-04 | Baja | ✅ Corregido | **Sin docstrings**: `_cargar_recursos()`, `buscar_en_base_documental()` y `buscar_en_datos_estructurados()` carecían de documentación inline. → Docstrings añadidos a las tres funciones. |
 | **BUG-NEW-01** | **Alta** | ✅ Corregido | **`UnicodeEncodeError` en consola Windows**: los `print()` con emojis (`🔧`, `✓`) dentro de `_cargar_recursos()` causaban crash al iniciar la app (codificación cp1252). La excepción dentro de `@st.cache_resource` impedía cargar el vectorstore y bloqueaba el arranque completo. → Emojis eliminados de los `print()`. |
@@ -101,6 +101,7 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
+| `c0bc12a` | fix: corregir TLS-02 — keyword matching tiene prioridad sobre FAQ scoring |
 | `6add79b` | feat: docstrings, razonamiento ReAct en UI y diagrama Mermaid |
 | `8bd5750` | fix: usar emoji como avatar del asistente en lugar de Path object |
 | `088a4db` | fix: interfaz limpia sin CSS personalizado |
@@ -117,7 +118,6 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | # | Severidad | Descripción |
 |---|-----------|-------------|
-| TLS-02 | Baja | Fallback semántico en `buscar_en_datos_estructurados` |
 | TLS-03 | Baja | `_cache` fallback silencioso en ejecución CLI |
 | DEP-01 | Media | Evaluar separar dependencias de scraping en grupo opcional de `pyproject.toml` |
 
