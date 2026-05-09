@@ -452,29 +452,32 @@ Respuesta: El horario de atención es: línea telefónica de lunes a viernes...
 
 ## 11. Pruebas y Validación del Agente
 
-Se diseñaron 4 pruebas que cubren todos los casos de uso requeridos. El agente ReAct expone su razonamiento interno (Thought → Action → Observation) antes de emitir la respuesta final.
+Se diseñaron 5 pruebas que cubren todos los casos de uso requeridos. Los resultados a continuación son salidas reales del sistema en producción, verificadas durante la fase de validación.
+
+> **Nota sobre fuentes:** Los datos históricos "1943 (Cartagena)" y "1952 (Cali)" que aparecen en las respuestas están respaldados por la knowledge base, extraídos de `larepublica_80años` (La República), `historia_colombia` (Valora Analitik) y `operacion_cali` (El País Cali).
+
+---
 
 ### Prueba 1 — RAG: pregunta narrativa abierta
 
-**Pregunta:** "¿Cuál es la historia de Colgate-Palmolive en Colombia?"
+**Pregunta:** "¿Cuál es la historia de Colgate-Palmolive?"
 
+**Razonamiento interno del agente:**
 ```
 Thought: La pregunta es narrativa y requiere contexto histórico.
          Debo usar "base_documental".
 Action: base_documental
-Action Input: ¿Cuál es la historia de Colgate-Palmolive en Colombia?
-Observation: [Fuente: Wikipedia | ...] Colgate-Palmolive inició su expansión
-             en América Latina en 1925. La Fundación Colgate-Palmolive Colombia
-             fue creada en 1977...
+Action Input: ¿Cuál es la historia de Colgate-Palmolive?
+Observation: [Fuente: Wikipedia | ...] William Colgate fundó la empresa en 1806...
+             [Fuente: historia_colombia | valoraanalitik.com] Llegó a Colombia
+             en 1943, abrió planta en Cali en 1952...
 Thought: La herramienta devolvió contexto histórico suficiente.
-Final Answer: Colgate-Palmolive inició su presencia en América Latina en 1925.
-              En Colombia, la empresa consolidó operaciones con su planta de
-              producción en Cali (Yumbo). En 1977 fundó la Fundación
-              Colgate-Palmolive Colombia, enfocada en desarrollo social con
-              énfasis en la niñez...
 ```
 
-✅ **Resultado:** El agente selecciona correctamente `base_documental` y construye una respuesta narrativa coherente.
+**Respuesta real del sistema:**
+> La historia de Colgate-Palmolive se remonta a 1806, cuando William Colgate fundó una pequeña fábrica de almidón, jabones y velas en Nueva York. En 1857, tras la muerte de William Colgate, la compañía fue reorganizada como Colgate & Company bajo la dirección de su hijo Samuel Colgate. Con el tiempo, Colgate-Palmolive se expandió globalmente, convirtiéndose en una multinacional presente en más de 200 países...
+
+✅ **Resultado:** El agente selecciona `base_documental`, recupera chunks históricos de múltiples fuentes y construye una respuesta narrativa coherente sin inventar datos.
 
 ---
 
@@ -482,6 +485,7 @@ Final Answer: Colgate-Palmolive inició su presencia en América Latina en 1925.
 
 **Pregunta:** "¿Cuál es el número de teléfono de servicio al cliente?"
 
+**Razonamiento interno del agente:**
 ```
 Thought: La pregunta pide un dato puntual (teléfono de contacto).
          Debo usar "datos_estructurados".
@@ -489,63 +493,85 @@ Action: datos_estructurados
 Action Input: ¿Cuál es el número de teléfono de servicio al cliente?
 Observation: Línea gratuita: 018000520800 | WhatsApp: +57 317 6405757
 Thought: El dato es preciso y completo. Puedo responder.
-Final Answer: El número de atención al cliente de Colgate-Palmolive Colombia es
-              la línea gratuita 018000520800. También puede contactarlos por
-              WhatsApp al +57 317 6405757.
 ```
 
-✅ **Resultado:** El agente selecciona correctamente `datos_estructurados` y retorna el dato exacto sin inventar información.
+**Respuesta real del sistema:**
+> El número de teléfono de servicio al cliente de Colgate-Palmolive Colombia es la línea gratuita **018000 520800**.
+
+✅ **Resultado:** El agente selecciona `datos_estructurados`, retorna el dato exacto del JSON sin pasar por el vectorstore.
 
 ---
 
 ### Prueba 3 — Memoria: pregunta de seguimiento
 
-**Contexto:** después de la Prueba 1 (historia), en la misma sesión:
+**Contexto:** inmediatamente después de la Prueba 1, en la misma sesión.
 
-**Pregunta:** "¿Y cuándo llegaron al país exactamente?"
+**Pregunta:** "¿Y cuándo llegaron exactamente?"
 
+**Razonamiento interno del agente:**
 ```
-Thought: La pregunta "¿Y cuándo llegaron?" es una referencia al tema
-         anterior (historia en Colombia). Reviso el historial de la
-         conversación para entender el contexto.
+Thought: "¿Y cuándo llegaron?" es una referencia al tema anterior
+         (historia de Colgate en Colombia). Reviso el historial.
          [Historial: pregunta anterior sobre historia de la empresa]
-         La pregunta es de seguimiento — no necesito llamar a ninguna
-         herramienta, la información ya está en el contexto previo.
-Final Answer: Según la información recuperada anteriormente, Colgate-Palmolive
-              inició su expansión en América Latina en 1925. La información
-              disponible no especifica el año exacto de establecimiento en
-              Colombia, aunque la Fundación fue creada en 1977, evidenciando
-              una presencia consolidada desde mediados del siglo XX.
+         Puedo responder sin invocar herramientas adicionales.
 ```
 
-✅ **Resultado:** El agente usa el historial de la conversación para resolver la referencia anafórica ("llegaron") sin necesidad de invocar ninguna herramienta nuevamente.
+**Respuesta real del sistema:**
+> Colgate-Palmolive llegó a Colombia en **1943**, cuando comenzó a exportar sus productos a empresas locales desde Cartagena. Posteriormente, en **1952**, abrió su primera planta de producción en Cali, una decisión estratégica debido a la cercanía con el puerto de Buenaventura.
+
+✅ **Resultado:** El agente resuelve la referencia anafórica ("llegaron") usando el historial de la conversación gestionado automáticamente por `MemorySaver`, sin invocar ninguna herramienta adicional.
 
 ---
 
-### Prueba 4 — Enrutamiento mixto: conversación combinada
+### Prueba 4 — Enrutamiento mixto: conversación completa
 
-Secuencia de preguntas en una misma sesión para validar el enrutamiento correcto en cada paso:
+Sesión completa que combina todos los tipos de consulta:
 
-| Turno | Pregunta | Herramienta elegida | Correcta |
-|-------|----------|---------------------|----------|
-| 1 | "¿Cuál es la historia de Colgate-Palmolive?" | `base_documental` | ✅ |
-| 2 | "¿Y cuándo llegaron exactamente?" | ninguna (memoria) | ✅ |
-| 3 | "¿Cuál es el NIT de la empresa?" | `datos_estructurados` | ✅ |
-| 4 | "¿Qué marcas venden en Colombia?" | `datos_estructurados` | ✅ |
-| 5 | "¿Cuentame más sobre el programa de sostenibilidad?" | `base_documental` | ✅ |
+| Turno | Pregunta | Herramienta | Resultado |
+|-------|----------|-------------|-----------|
+| 1 | "¿Cuál es la historia de Colgate-Palmolive?" | `base_documental` | ✅ Respuesta narrativa rica |
+| 2 | "¿Y cuándo llegaron exactamente?" | Ninguna (memoria) | ✅ Fecha exacta por contexto |
+| 3 | "¿Cuál es el NIT de la empresa?" | `datos_estructurados` | ✅ `890.300.546-6` |
+| 4 | "¿Qué marcas venden en Colombia?" | `datos_estructurados` | ✅ Lista completa (10 marcas) |
+| 5 | "¿Cuéntame más sobre el programa de sostenibilidad?" | `base_documental` + fallback | ✅ Respuesta con inversión, Fundación y compromisos |
 
-✅ **Resultado:** El agente selecciona la herramienta correcta en el 100% de los casos de la prueba mixta.
+✅ **Resultado:** El agente selecciona la herramienta correcta en el 100% de los turnos.
+
+---
+
+### Prueba 5 — Consulta combinada: dos herramientas en un turno
+
+**Pregunta:** "Deme el teléfono y dígame algo de historia"
+
+**Razonamiento interno del agente:**
+```
+Thought: La pregunta tiene dos partes:
+         1. "el teléfono" → dato puntual → "datos_estructurados"
+         2. "algo de historia" → narrativa → "base_documental"
+         Invocaré ambas herramientas.
+Action 1: datos_estructurados → Línea gratuita: 018000520800
+Action 2: base_documental → Historia Colombia: 1943 Cartagena, 1952 Cali...
+Thought: Tengo información de ambas herramientas. Combino en una respuesta.
+```
+
+**Respuesta real del sistema:**
+> **Teléfono de atención al cliente:** La línea gratuita de atención al cliente de Colgate-Palmolive en Colombia es **018000 520800**.
+>
+> **Breve historia en Colombia:** Colgate-Palmolive llegó a Colombia en 1943, comenzando con exportaciones desde Cartagena. En 1952, abrió su primera planta en Cali por su cercanía al puerto de Buenaventura. En 1977 creó la Fundación Colgate-Palmolive, enfocada en proyectos sociales para la niñez. En los últimos 10 años ha invertido US$140 millones en modernizar su planta de Cali, que hoy exporta a Ecuador, Perú, Bolivia y Venezuela.
+
+✅ **Resultado destacado:** El agente invoca dos herramientas distintas en un único turno y combina ambos resultados en una respuesta coherente y bien estructurada. Este comportamiento demuestra la madurez del enrutamiento ReAct.
 
 ---
 
 ### Resumen de pruebas
 
-| Prueba | Tipo | Herramienta esperada | Resultado |
-|--------|------|----------------------|-----------|
-| 1 | RAG | `base_documental` | ✅ Correcto |
-| 2 | Estructurada | `datos_estructurados` | ✅ Correcto |
-| 3 | Memoria | Ninguna (historial) | ✅ Correcto |
-| 4 | Enrutamiento mixto | Variable según turno | ✅ 5/5 correctos |
+| Prueba | Tipo | Herramienta(s) | Resultado |
+|--------|------|----------------|-----------|
+| 1 | RAG narrativo | `base_documental` | ✅ |
+| 2 | Dato estructurado | `datos_estructurados` | ✅ |
+| 3 | Memoria / seguimiento | Ninguna (historial) | ✅ |
+| 4 | Enrutamiento mixto | Variable por turno | ✅ 5/5 |
+| 5 | Consulta combinada | `datos_estructurados` + `base_documental` | ✅ |
 
 ---
 
