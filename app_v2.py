@@ -168,7 +168,14 @@ if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
             respuesta = msg
             st.session_state.thread_id = nueva_sesion()
         else:
-            st.markdown(respuesta.replace("$", r"\$"))
+            st.markdown(
+                respuesta
+                .replace("$", r"\$")
+                .replace("*", r"\*")
+                .replace("_", r"\_")
+                .replace("`", r"\`")
+                .replace("~", r"\~")
+            )
             if pasos:
                 with st.expander("🧠 Ver razonamiento del agente"):
                     for j, paso in enumerate(pasos):
