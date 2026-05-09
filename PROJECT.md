@@ -28,6 +28,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | BUG-01 | Media | ✅ Corregido | **Detección de error frágil**: matching de strings sobre el mensaje de excepción. → Reemplazado por centinelas tipados (`ERROR_GENERICO`, `ERROR_RATE_LIMIT`). |
 | BUG-02 | Baja | ✅ Corregido | **Línea en blanco con espacios en línea 1**: causaba warnings en linters. → Eliminada en reescritura del archivo. |
 | **BUG-NEW-02** | **Alta** | ✅ Corregido | **Respuestas acumuladas por estado corrupto en MemorySaver**: cuando `agente.invoke()` fallaba a mitad de ejecución, LangGraph persistía el mensaje del usuario en el checkpointer sin respuesta del asistente. En el siguiente turno exitoso, el agente veía todos los mensajes acumulados sin responder y los contestaba juntos, generando alucinaciones. → Al detectar un error, `app_v2.py` resetea `thread_id` inmediatamente, abandonando el estado corrupto antes del siguiente turno. |
+| **UI-08** | **Alta** | ✅ Corregido | **Razonamiento ReAct no visible en UI**: los pasos Thought/Action/Observation ocurrían internamente sin visibilidad. → Nueva función `preguntar_con_pasos()` en `agent.py` (con `_extraer_pasos()`) devuelve los pasos del turno actual; `app_v2.py` los muestra en `st.expander("🧠 Ver razonamiento del agente")` con herramienta seleccionada y extracto del contexto recuperado. |
 
 ---
 
@@ -46,6 +47,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 |---|-----------|--------|----------|
 | AGT-01 | Media | ✅ Corregido | **`SYSTEM_PROMPT` duplicado**: `agent.py` lo definía inline ignorando `prompts.py`. → Ahora importa `SYSTEM_PROMPT` desde `prompts.py`. |
 | AGT-02 | Baja | ✅ Corregido | **Excepción técnica expuesta al usuario**: `str(e)` podía filtrar API keys o stack traces. → Errores logueados con `logging.error(..., exc_info=True)`; función retorna centinelas tipados en lugar de strings de error. |
+| AGT-03 | Baja | ✅ Corregido | **Sin docstrings en funciones**: `preguntar()`, `nueva_sesion()` y helpers internos carecían de documentación. → Docstrings añadidos a todas las funciones públicas y privadas (`_extraer_pasos`, `preguntar_con_pasos`). |
 
 ---
 
@@ -66,6 +68,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | TLS-01 | Media | ✅ Corregido | **Matching de palabras clave frágil**: listas hardcodeadas con variantes acentuadas y sin acentuar duplicadas. → Función `_normalizar()` con `unicodedata` elimina tildes antes del matching; listas depuradas y ampliadas. |
 | TLS-02 | Baja | Pendiente | **Sin fallback semántico en datos_estructurados**: si el keyword matching falla, no intenta búsqueda semántica sobre el JSON. Mitigado parcialmente por BUG-NEW-03. |
 | TLS-03 | Baja | Pendiente | **`_cache` fallback silencioso** en ejecución CLI sin Streamlit. |
+| TLS-04 | Baja | ✅ Corregido | **Sin docstrings**: `_cargar_recursos()`, `buscar_en_base_documental()` y `buscar_en_datos_estructurados()` carecían de documentación inline. → Docstrings añadidos a las tres funciones. |
 | **BUG-NEW-01** | **Alta** | ✅ Corregido | **`UnicodeEncodeError` en consola Windows**: los `print()` con emojis (`🔧`, `✓`) dentro de `_cargar_recursos()` causaban crash al iniciar la app (codificación cp1252). La excepción dentro de `@st.cache_resource` impedía cargar el vectorstore y bloqueaba el arranque completo. → Emojis eliminados de los `print()`. |
 
 ---
@@ -79,7 +82,16 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 ---
 
-### 7. `app.py` vs `app_v2.py` — Regresión visual (resuelta)
+### 7. `README.md` — Documentación
+
+| # | Severidad | Estado | Problema |
+|---|-----------|--------|----------|
+| DOC-01 | Media | ✅ Corregido | **Diagrama de arquitectura en ASCII**: el diagrama de flujo era un bloque de arte ASCII que GitHub mostraba como texto plano sin estructura visual. → Reemplazado por un diagrama `flowchart TD` en Mermaid, que GitHub renderiza automáticamente como imagen interactiva. |
+| DOC-02 | Baja | ✅ Corregido | **Razonamiento del agente documentado solo en README**: las pruebas mostraban el ciclo ReAct como texto estático. → Ahora el razonamiento es visible en tiempo real en la UI (UI-08); actualizado el aviso en la sección de pruebas del README. |
+
+---
+
+### 8. `app.py` vs `app_v2.py` — Regresión visual (resuelta)
 
 La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipografía Sora y FAQ con tarjetas. `app_v2.py` eliminó todo eso al migrar a Streamlit. Resuelto en commit `d7df437` con branding completo y CSS corporativo.
 
@@ -89,6 +101,9 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
+| `6add79b` | feat: docstrings, razonamiento ReAct en UI y diagrama Mermaid |
+| `8bd5750` | fix: usar emoji como avatar del asistente en lugar de Path object |
+| `088a4db` | fix: interfaz limpia sin CSS personalizado |
 | `d7df437` | feat: rediseño visual corporativo y mejoras de código |
 | `32850b3` | fix: UnicodeEncodeError en consola Windows y config obsoleta |
 | `3f3b15f` | docs: PROJECT.md con estado de issues y bugs corregidos |

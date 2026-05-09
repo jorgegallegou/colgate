@@ -452,6 +452,8 @@ Respuesta: El horario de atención es: línea telefónica de lunes a viernes...
 
 Se diseñaron 5 pruebas que cubren todos los casos de uso requeridos. Los resultados a continuación son salidas reales del sistema en producción, verificadas durante la fase de validación.
 
+> **Razonamiento visible en la interfaz:** el ciclo Thought → Action → Observation de cada prueba es directamente observable en la aplicación desplegando el expander **"🧠 Ver razonamiento del agente"** que aparece bajo cada respuesta. Muestra la herramienta seleccionada y el extracto del contexto recuperado, permitiendo auditar en tiempo real la decisión del router ReAct.
+
 > **Nota sobre fuentes:** Los datos históricos "1943 (Cartagena)" y "1952 (Cali)" que aparecen en las respuestas están respaldados por la knowledge base, extraídos de `larepublica_80años` (La República), `historia_colombia` (Valora Analitik) y `operacion_cali` (El País Cali).
 
 ---
