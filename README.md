@@ -261,42 +261,7 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 
 ### 8.1 Diagrama de flujo
 
-```mermaid
-flowchart TD
-    U(["👤 Usuario"])
-    U -->|pregunta| APP
-
-    subgraph APP["📱 app_v2.py — Streamlit"]
-        APP1["Historial · razonamiento · thread_id UUID"]
-    end
-
-    SYS["📄 prompts.py"] -->|system prompt| AGT
-    MEM[("💾 MemorySaver")] <-->|lectura / escritura| AGT
-
-    APP -->|"pregunta + thread_id"| AGT
-
-    subgraph AGT["🤖 agent.py — Agente ReAct · LangGraph"]
-        DEC{"Router: ¿qué herramienta usar?"}
-    end
-
-    DEC -->|"pregunta narrativa"| T1
-    DEC -->|"dato puntual"| T2
-
-    subgraph T1["📚 base_documental"]
-        F["FAISS · 137 chunks · top-4"]
-    end
-
-    subgraph T2["📋 datos_estructurados"]
-        J["JSON determinista · keyword matching"]
-    end
-
-    T1 -->|chunks relevantes| LLM
-    T2 -->|dato exacto| LLM
-
-    LLM["☁️ mistral-small-latest · T=0.3"]
-    LLM -->|respuesta| APP
-    APP -->|respuesta al usuario| U
-```
+![Arquitectura del agente](assets/diagrama_arquitectura.png)
 
 ### 8.2 Comparación Módulo 1 vs Módulo 2
 
