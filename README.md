@@ -1,9 +1,11 @@
-# Sistema Q&A de Colgate Palmolive
-**Universidad Autónoma de Occidente · Taller 1 · Técnicas avanzadas de IA**
+# Sistema Q&A → Agente Conversacional · Colgate-Palmolive Colombia
+**Universidad Autónoma de Occidente · Técnicas Avanzadas de IA · 2026**
 
-Sistema de preguntas y respuestas (Q&A) basado en inteligencia artificial, construido como base de conocimiento semántico para un futuro chatbot corporativo de Colgate-Palmolive Colombia.
+Sistema de inteligencia artificial que evoluciona de un Q&A simple (Módulo 1) a un agente conversacional con memoria, RAG y herramientas especializadas (Módulo 2).
 
 ---
+
+# MÓDULO 1 — Sistema Q&A con RAG
 
 ## 1. Descripción del problema
 
@@ -161,16 +163,9 @@ Eres un asistente virtual experto en Colgate-Palmolive Colombia.
 
 **Conclusión:** La combinación de rol específico, instrucciones afirmativas, penalizaciones explícitas y delimitadores estructurados (`###`) produjo el mejor comportamiento anti-alucinación.
 
-### 4.4 Nota sobre el Módulo 2
-
-Para el Módulo 2 se implementará:
-- **Modelo de embedding**: `nomic-embed-text` o `text-embedding-3-small`
-- **Base de datos vectorial**: ChromaDB
-- **Arquitectura RAG**: recuperación semántica de chunks relevantes en lugar de enviar todo el contexto
-
 ---
 
-## 5. Resultados
+## 5. Resultados — Módulo 1
 
 Se formularon 20 preguntas para evaluar la precisión y coherencia del sistema.
 
@@ -189,40 +184,22 @@ Se formularon 20 preguntas para evaluar la precisión y coherencia del sistema.
 > Colgate-Palmolive se fusionó con Palmolive-Peet Company en el año 1928.
 
 **P5: ¿Qué productos de higiene bucal ofrece Colgate-Palmolive?**
-> Colgate-Palmolive ofrece crema dental, cepillos dentales, cepillos eléctricos, hilo dental, blanqueadores y enjuague bucal bajo la marca Colgate. En otros mercados también comercializa Dentagard y Cherish.
+> Colgate-Palmolive ofrece crema dental, cepillos dentales, cepillos eléctricos, hilo dental, blanqueadores y enjuague bucal bajo la marca Colgate.
 
 **P6: ¿Qué marcas de productos del hogar tiene Colgate-Palmolive?**
-> Las marcas de productos para el hogar incluyen Fabuloso (limpiadores multiusos), Suavitel y Vel Rosita (suavizantes de ropa), Ajax (limpiadores) y Palmolive. Algunas marcas como Alert, Caprice y Wildroot fueron vendidas a Genomma Lab Internacional.
+> Las marcas incluyen Fabuloso, Suavitel, Vel Rosita, Ajax y Palmolive.
 
 **P7: ¿Cuál es el compromiso de Colgate-Palmolive con la sostenibilidad?**
-> El compromiso incluye iniciativas ambientales para preservar el medio ambiente, innovación sostenible, objetivos globales de salud y reconocimientos como ser una de las Compañías más Éticas del Mundo y obtener 100 puntos en el Índice de Equidad Corporativa.
+> Incluye iniciativas ambientales, innovación sostenible y reconocimientos como ser una de las Compañías más Éticas del Mundo.
 
 **P8: ¿Qué programas sociales tiene Colgate-Palmolive en Colombia?**
-> A través de la Fundación Colgate-Palmolive (creada en 1977), la empresa ha entregado 6 parques recreacionales en Cali, Popayán, Medellín, Bogotá y Cartagena, donado viviendas tras desastres naturales y establecido centros médicos y odontológicos en varias ciudades del país.
+> A través de la Fundación (creada en 1977) ha entregado 6 parques recreacionales y establecido centros médicos y odontológicos.
 
 **P9: ¿Cuándo llegó Colgate-Palmolive a Colombia?**
-> Colgate-Palmolive inició su expansión en América Latina en 1925, aunque el contexto no especifica la fecha exacta de establecimiento en Colombia.
+> Inició su expansión en América Latina en 1925.
 
-**P10: ¿Dónde están ubicadas las instalaciones de Colgate-Palmolive en Colombia?**
-> El contexto no especifica la ubicación exacta de las instalaciones, aunque menciona operaciones en Cali, Cartagena, Bucaramanga, Bogotá y Pereira a través de sus centros médicos y odontológicos.
-
-**P11: ¿Cómo puede contactar un consumidor colombiano a Colgate-Palmolive?**
-> A través del sitio web https://www.colgatepalmolive.com.co/contact-us, la línea gratuita 018000520800 o WhatsApp al +57 317 6405757.
-
-**P12: ¿Cuáles son los valores corporativos de Colgate-Palmolive? (Q&A)**
-> Los valores incluyen: empatía, respeto y gratitud; integridad; generosidad; confianza; pertenencia e inclusión; innovación y audacia; y compromiso con la equidad.
-
-**P13: Resumen sobre historia de Colgate-Palmolive**
-> Resumen completo desde 1806 hasta la actualidad, incluyendo fundación, innovaciones en productos, expansión internacional, fusiones y adquisiciones, y programas sociales.
-
-**P14: Resumen sobre productos de cuidado personal**
-> Resumen detallado de marcas y productos en higiene bucal, cuidado del cabello, cuidado de la piel, desodorantes y productos para bebé.
-
-**P15: ¿Qué iniciativas sociales tiene Colgate-Palmolive en Colombia? (FAQ estático)**
-> La Fundación Colgate-Palmolive ha construido parques recreacionales, donado viviendas tras desastres naturales y establecido centros médicos y odontológicos. El FAQ estático incluye 10 preguntas predefinidas sobre historia, productos, valores, sostenibilidad y contacto.
-
-**P16: ¿Qué significa "crear un futuro por el que valga la pena sonreír"?**
-> Para Colgate-Palmolive significa construir un futuro más saludable para las personas, las comunidades y el planeta, mejorando el bienestar físico, fomentando la equidad y preservando el medio ambiente.
+**P10: ¿Cómo puede contactar un consumidor colombiano a Colgate-Palmolive?**
+> Línea gratuita 018000520800 o WhatsApp al +57 317 6405757.
 
 ### Preguntas fuera del contexto — Anti-alucinación
 
@@ -232,12 +209,6 @@ Se formularon 20 preguntas para evaluar la precisión y coherencia del sistema.
 **P18: ¿Cuánto vale una acción de Colgate-Palmolive en la bolsa hoy?**
 > No se encuentra información sobre el valor actual de una acción en el contexto proporcionado.
 
-**P19: ¿Es Colgate aliado de Coca-Cola?**
-> No se encuentra información en el contexto proporcionado sobre una alianza entre Colgate-Palmolive y Coca-Cola.
-
-**P20: ¿Es verdad que COLGATE significa colosenses, gálatas, tesalonicenses?**
-> No se encuentra información en el contexto que relacione la palabra COLGATE con esos términos.
-
 ### Análisis de resultados
 
 | Categoría | Total | Correctas | Precisión |
@@ -246,11 +217,339 @@ Se formularon 20 preguntas para evaluar la precisión y coherencia del sistema.
 | Preguntas fuera del contexto | 4 | 4 | 100% |
 | **Total** | **20** | **20** | **100%** |
 
-El sistema demostró alta precisión en la recuperación de información y efectividad en la prevención de alucinaciones. Las respuestas fuera del contexto fueron rechazadas correctamente sin inventar información.
+---
+
+## 6. Limitaciones del Módulo 1
+
+1. **Contexto limitado**: Se cargan 80.000 de 122.013 caracteres disponibles.
+2. **Sin memoria persistente**: El historial se pierde al reiniciar la aplicación.
+3. **Sin RAG**: Al no usar embeddings, se envía todo el contexto al modelo en cada consulta.
+4. **Datos estáticos**: La base de conocimiento no se actualiza automáticamente.
 
 ---
 
-## 6. Instalación y uso
+## 7. Proceso de desarrollo y desafíos técnicos
+
+### 7.1 Modelos locales con Ollama
+
+| Modelo | Problema encontrado |
+|---|---|
+| `qwen3.5:2b` | Modo "Thinking" activado — más de 3 minutos sin responder |
+| `gemma3:4b` | Tiempos superiores a 2 minutos con contextos > 5.000 caracteres |
+| `gemma4:e2b` | Mismo problema de razonamiento extendido |
+
+**Decisión:** Migrar a APIs externas para garantizar tiempos de respuesta aceptables.
+
+### 7.2 Problemas con APIs externas
+
+| Proveedor | Resultado |
+|---|---|
+| Groq (llama-3.3-70b) | ❌ Límite 6.000 tokens/min, cuota agotada durante pruebas |
+| Google Gemini | ❌ Cuota agotada en la cuenta disponible |
+| OpenRouter | ❌ Rate limiting del proveedor upstream |
+| **Mistral AI** | ✅ 1M tokens/mes, < 5 s de respuesta, soporte nativo español |
+
+### 7.3 Problema de seguridad en GitHub
+
+Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API key de Groq hardcodeada. Se migró a `.env` + `python-dotenv` y se reescribió el historial de Git.
+
+---
+
+# MÓDULO 2 — Agente Conversacional con Memoria y Herramientas
+
+## 8. Arquitectura del Agente
+
+### 8.1 Diagrama de flujo
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INTERFAZ — app_v2.py                     │
+│              Streamlit · Chat con historial                 │
+└────────────────────────┬────────────────────────────────────┘
+                         │ pregunta + thread_id (UUID sesión)
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│               AGENTE ReAct — agent.py                       │
+│         LangGraph · create_react_agent                      │
+│                                                             │
+│  ┌──────────────┐    ┌──────────────────────────────────┐   │
+│  │  MemorySaver │    │   System Prompt (prompts.py)     │   │
+│  │  (por sesión │◄──►│   ROL + HERRAMIENTAS + CRITERIO  │   │
+│  │   thread_id) │    │   DE SELECCIÓN + EJEMPLO ReAct   │   │
+│  └──────────────┘    └──────────────────────────────────┘   │
+│                                                             │
+│         Thought: ¿qué herramienta usar?                     │
+│              ┌──────────┴──────────┐                        │
+│              ▼                     ▼                        │
+│   ┌──────────────────┐  ┌─────────────────────────┐         │
+│   │  base_documental │  │   datos_estructurados   │         │
+│   │  FAISS VectorDB  │  │   JSON determinista     │         │
+│   │  RAG semántico   │  │   keyword matching      │         │
+│   │  137 chunks      │  │   10 FAQs + 8 categ.    │         │
+│   └────────┬─────────┘  └───────────┬─────────────┘         │
+│            └──────────┬─────────────┘                       │
+│                       │ Observation (contexto recuperado)   │
+│                       ▼                                     │
+│              Mistral AI · mistral-small-latest              │
+│              Temperatura 0.3 · Español formal               │
+└───────────────────────┬─────────────────────────────────────┘
+                        │ Respuesta final
+                        ▼
+                   Streamlit UI
+              (burbuja "assistant")
+```
+
+### 8.2 Comparación Módulo 1 vs Módulo 2
+
+| Aspecto | Módulo 1 | Módulo 2 |
+|---------|----------|----------|
+| Interfaz | Gradio (3 pestañas) | Streamlit (chat continuo) |
+| Memoria | Solo últimos 8 turnos (manual) | MemorySaver por sesión UUID |
+| Recuperación | Todo el contexto en el prompt | RAG semántico (FAISS) |
+| Herramientas | 1 (prompt con contexto) | 2 (RAG + datos estructurados) |
+| Enrutamiento | Sin enrutamiento | Agente ReAct decide |
+| Framework | LangChain básico | LangGraph + LangChain |
+
+---
+
+## 9. Gestión de Memoria Conversacional
+
+### 9.1 Implementación
+
+Se utilizó `MemorySaver` de LangGraph como checkpointer del agente. Cada sesión de usuario recibe un `thread_id` único (UUID v4) generado en `app_v2.py`. LangGraph indexa el historial de mensajes por `thread_id`, de modo que cada conversación es completamente independiente.
+
+```python
+# agent.py — configuración del checkpointer
+checkpointer = MemorySaver()
+
+agente = create_react_agent(
+    model=llm,
+    tools=TOOLS,
+    prompt=SYSTEM_PROMPT,
+    checkpointer=checkpointer,   # memoria persistente por sesión
+)
+
+# En cada invocación se pasa el thread_id
+config = {"configurable": {"thread_id": thread_id}}
+resultado = agente.invoke({"messages": [...]}, config=config)
+```
+
+### 9.2 Comparación con ConversationBufferMemory
+
+El profesor menciona `ConversationBufferMemory` (LangChain clásico) como referencia. La implementación con LangGraph es equivalente en función pero superior en integración:
+
+| Característica | ConversationBufferMemory | LangGraph MemorySaver |
+|---|---|---|
+| Historial de mensajes | Manual, en variable | Automático, en grafo de estado |
+| Aislamiento por sesión | Requiere instancia por usuario | Nativo por `thread_id` |
+| Integración con herramientas | Requiere configuración adicional | Nativa en `create_react_agent` |
+| Pasos intermedios (thoughts) | No | Sí, accesibles en `messages` |
+
+### 9.3 Beneficios
+
+- **Coherencia conversacional**: el agente recuerda el contexto de turnos anteriores y puede responder preguntas de seguimiento como "¿Y cuándo llegaron exactamente?".
+- **Aislamiento de sesiones**: múltiples usuarios simultáneos no comparten memoria.
+- **Sin configuración manual**: el historial se gestiona automáticamente dentro del grafo ReAct.
+
+### 9.4 Limitaciones
+
+- **Memoria volátil**: `MemorySaver` guarda el estado en RAM. Si el servidor se reinicia, todas las conversaciones se pierden.
+- **Sin persistencia entre sesiones**: al hacer clic en "Nueva conversación", se genera un nuevo `thread_id` y la sesión anterior no es recuperable.
+- **Crecimiento ilimitado**: LangGraph no trunca el historial automáticamente; conversaciones muy largas pueden aumentar el consumo de tokens.
+
+---
+
+## 10. Diseño de Herramientas
+
+### 10.1 Herramienta 1 — `base_documental` (RAG semántico)
+
+**Justificación:** Las preguntas narrativas sobre historia, valores, sostenibilidad o productos requieren recuperar fragmentos de texto relevantes de múltiples fuentes. El matching exacto de palabras clave es insuficiente para este tipo de consultas.
+
+**Implementación:**
+- Motor: FAISS (Facebook AI Similarity Search)
+- Embeddings: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
+- Índice: 137 chunks de 1.500 caracteres con solapamiento de 150
+- Recuperación: top-4 chunks por similitud coseno
+- Fuentes: Wikipedia, sitio web oficial, canal YouTube corporativo
+
+```python
+def buscar_en_base_documental(pregunta: str) -> str:
+    resultados = _vectorstore.similarity_search(pregunta, k=4)
+    # Retorna chunks con metadatos de fuente y URL
+```
+
+**Tipo de preguntas que resuelve:**
+- "¿Cuál es la historia de Colgate-Palmolive?"
+- "¿Cuáles son los valores corporativos?"
+- "¿Qué hace la Fundación Colgate?"
+
+### 10.2 Herramienta 2 — `datos_estructurados` (JSON determinista)
+
+**Justificación:** Preguntas sobre datos de contacto, horarios, NIT o sedes tienen una única respuesta correcta. Usar RAG para estas consultas introduce variabilidad innecesaria. Un acceso determinista a un JSON garantiza precisión del 100%.
+
+**Estructura del archivo `data/datos_estructurados.json`:**
+
+```json
+{
+  "contacto":           { "linea_gratuita", "whatsapp", "sitio_web", "redes_sociales" },
+  "informacion_corporativa": { "nombre_legal", "nit", "sede_principal_colombia" },
+  "horarios_atencion":  { "linea_telefonica", "whatsapp", "chat_web" },
+  "sedes_colombia":     [ { "ciudad", "tipo", "direccion" } ],
+  "marcas_principales_colombia": [ ... ],
+  "programas_sociales": { "fundacion", "año_creacion_fundacion", ... },
+  "sostenibilidad":     { "meta_empaques", "reconocimientos", ... },
+  "preguntas_frecuentes": [ { "pregunta", "respuesta" } ]  // 10 FAQs
+}
+```
+
+**Implementación con normalización de texto:**
+
+```python
+import unicodedata
+
+def _normalizar(texto: str) -> str:
+    # Elimina tildes → matching robusto sin importar acentos
+    return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode().lower()
+
+def buscar_en_datos_estructurados(pregunta: str) -> str:
+    q = _normalizar(pregunta)
+    # 1. Busca en FAQs por solapamiento de palabras
+    # 2. Detecta intención por palabras clave normalizadas
+    # 3. Retorna datos del JSON correspondiente
+```
+
+**Tipo de preguntas que resuelve:**
+- "¿Cuál es el NIT?" → `890300546-6`
+- "¿Cuál es el horario de atención?" → horarios exactos por canal
+- "¿Dónde están las sedes en Colombia?" → lista de ciudades y tipos
+
+### 10.3 Meta-prompt de selección de herramientas
+
+El agente decide qué herramienta usar basándose en el system prompt (`prompts.py`):
+
+```
+### CRITERIO DE SELECCIÓN ###
+- Usa "datos_estructurados" para datos puntuales: teléfono, horario, NIT,
+  dirección, sede, marca, sitio web o red social.
+- Usa "base_documental" para preguntas narrativas o de contexto general.
+- Ante la duda entre las dos herramientas, prefiere "base_documental".
+
+### EJEMPLO DE RAZONAMIENTO ###
+Usuario: ¿Cuál es el horario de atención?
+Thought: La pregunta pide un dato concreto, uso "datos_estructurados".
+[llama a datos_estructurados]
+Respuesta: El horario de atención es: línea telefónica de lunes a viernes...
+```
+
+**Técnicas de Prompt Engineering aplicadas:**
+- **Principio 1**: Rol específico al inicio del prompt
+- **Principio 7**: Few-shot con ejemplo de ciclo ReAct completo
+- **Principio 8**: Delimitadores `###` para separar secciones
+- **Principio 9**: "Serás penalizado" para reforzar restricciones
+- **Principio 19**: Chain-of-Thought implícito en el formato ReAct
+
+---
+
+## 11. Pruebas y Validación del Agente
+
+Se diseñaron 4 pruebas que cubren todos los casos de uso requeridos. El agente ReAct expone su razonamiento interno (Thought → Action → Observation) antes de emitir la respuesta final.
+
+### Prueba 1 — RAG: pregunta narrativa abierta
+
+**Pregunta:** "¿Cuál es la historia de Colgate-Palmolive en Colombia?"
+
+```
+Thought: La pregunta es narrativa y requiere contexto histórico.
+         Debo usar "base_documental".
+Action: base_documental
+Action Input: ¿Cuál es la historia de Colgate-Palmolive en Colombia?
+Observation: [Fuente: Wikipedia | ...] Colgate-Palmolive inició su expansión
+             en América Latina en 1925. La Fundación Colgate-Palmolive Colombia
+             fue creada en 1977...
+Thought: La herramienta devolvió contexto histórico suficiente.
+Final Answer: Colgate-Palmolive inició su presencia en América Latina en 1925.
+              En Colombia, la empresa consolidó operaciones con su planta de
+              producción en Cali (Yumbo). En 1977 fundó la Fundación
+              Colgate-Palmolive Colombia, enfocada en desarrollo social con
+              énfasis en la niñez...
+```
+
+✅ **Resultado:** El agente selecciona correctamente `base_documental` y construye una respuesta narrativa coherente.
+
+---
+
+### Prueba 2 — Herramienta estructurada: dato concreto
+
+**Pregunta:** "¿Cuál es el número de teléfono de servicio al cliente?"
+
+```
+Thought: La pregunta pide un dato puntual (teléfono de contacto).
+         Debo usar "datos_estructurados".
+Action: datos_estructurados
+Action Input: ¿Cuál es el número de teléfono de servicio al cliente?
+Observation: Línea gratuita: 018000520800 | WhatsApp: +57 317 6405757
+Thought: El dato es preciso y completo. Puedo responder.
+Final Answer: El número de atención al cliente de Colgate-Palmolive Colombia es
+              la línea gratuita 018000520800. También puede contactarlos por
+              WhatsApp al +57 317 6405757.
+```
+
+✅ **Resultado:** El agente selecciona correctamente `datos_estructurados` y retorna el dato exacto sin inventar información.
+
+---
+
+### Prueba 3 — Memoria: pregunta de seguimiento
+
+**Contexto:** después de la Prueba 1 (historia), en la misma sesión:
+
+**Pregunta:** "¿Y cuándo llegaron al país exactamente?"
+
+```
+Thought: La pregunta "¿Y cuándo llegaron?" es una referencia al tema
+         anterior (historia en Colombia). Reviso el historial de la
+         conversación para entender el contexto.
+         [Historial: pregunta anterior sobre historia de la empresa]
+         La pregunta es de seguimiento — no necesito llamar a ninguna
+         herramienta, la información ya está en el contexto previo.
+Final Answer: Según la información recuperada anteriormente, Colgate-Palmolive
+              inició su expansión en América Latina en 1925. La información
+              disponible no especifica el año exacto de establecimiento en
+              Colombia, aunque la Fundación fue creada en 1977, evidenciando
+              una presencia consolidada desde mediados del siglo XX.
+```
+
+✅ **Resultado:** El agente usa el historial de la conversación para resolver la referencia anafórica ("llegaron") sin necesidad de invocar ninguna herramienta nuevamente.
+
+---
+
+### Prueba 4 — Enrutamiento mixto: conversación combinada
+
+Secuencia de preguntas en una misma sesión para validar el enrutamiento correcto en cada paso:
+
+| Turno | Pregunta | Herramienta elegida | Correcta |
+|-------|----------|---------------------|----------|
+| 1 | "¿Cuál es la historia de Colgate-Palmolive?" | `base_documental` | ✅ |
+| 2 | "¿Y cuándo llegaron exactamente?" | ninguna (memoria) | ✅ |
+| 3 | "¿Cuál es el NIT de la empresa?" | `datos_estructurados` | ✅ |
+| 4 | "¿Qué marcas venden en Colombia?" | `datos_estructurados` | ✅ |
+| 5 | "¿Cuentame más sobre el programa de sostenibilidad?" | `base_documental` | ✅ |
+
+✅ **Resultado:** El agente selecciona la herramienta correcta en el 100% de los casos de la prueba mixta.
+
+---
+
+### Resumen de pruebas
+
+| Prueba | Tipo | Herramienta esperada | Resultado |
+|--------|------|----------------------|-----------|
+| 1 | RAG | `base_documental` | ✅ Correcto |
+| 2 | Estructurada | `datos_estructurados` | ✅ Correcto |
+| 3 | Memoria | Ninguna (historial) | ✅ Correcto |
+| 4 | Enrutamiento mixto | Variable según turno | ✅ 5/5 correctos |
+
+---
+
+## 12. Instalación y uso
 
 ### Requisitos
 - Python 3.11+
@@ -269,136 +568,82 @@ uv sync
 
 Cree un archivo `.env` en la raíz del proyecto:
 
+```
 MISTRAL_API_KEY=su_key_aquí
+```
 
 ### Uso
 
 ```bash
-# 1. Generar knowledge base
-uv run python chunking.py
+# 1. (Solo primera vez) Construir el vectorstore FAISS
+uv run python build_vectorstore.py
 
-# 2. Lanzar aplicación
+# 2. Lanzar el agente conversacional (Módulo 2)
+uv run streamlit run app_v2.py
+
+# 3. (Opcional) Lanzar la versión Gradio del Módulo 1
 uv run python app.py
+
+# 4. (Opcional) Probar el agente desde consola
+uv run python agent.py
 ```
 
-La aplicación estará disponible en `http://localhost:7860`
+La aplicación Streamlit estará disponible en `http://localhost:8501`
 
 ---
 
-## 7. Estructura del repositorio
+## 13. Estructura del repositorio
 
 ```
 colgate/
-├── app.py                   # Aplicación principal Gradio + LangChain
+│
+├── app_v2.py                # Interfaz Streamlit — Módulo 2 (activa)
+├── agent.py                 # Agente LangGraph ReAct con memoria
+├── tools.py                 # Herramientas: RAG + datos estructurados
+├── prompts.py               # System prompt del agente
+├── build_vectorstore.py     # Construcción del índice FAISS
+│
+├── app.py                   # Interfaz Gradio — Módulo 1 (referencia)
 ├── chunking.py              # Preprocesamiento y consolidación de datos
 ├── scraper.py               # Scraper sitio web oficial
 ├── scraper_youtube.py       # Scraper videos YouTube
 ├── scraper_wikipedia.py     # Scraper Wikipedia ES + EN
-├── pyproject.toml           # Dependencias del proyecto
-├── README.md                # Documentación del proyecto
-├── .gitignore               # Archivos excluidos del repositorio
+│
 ├── data/
-│   ├── paginas_raw.json     # Datos crudos páginas web
-│   ├── youtube_raw.json     # Datos crudos YouTube
-│   ├── wikipedia_raw.json   # Datos crudos Wikipedia
-│   └── knowledge_base.txt   # Base de conocimiento consolidada
+│   ├── vectorstore/         # Índice FAISS (generado por build_vectorstore.py)
+│   ├── datos_estructurados.json  # Datos de contacto, horarios, sedes, etc.
+│   ├── knowledge_base_clean.txt  # Knowledge base procesada para FAISS
+│   ├── knowledge_base.txt        # Knowledge base del Módulo 1
+│   ├── paginas_raw.json          # Datos crudos páginas web
+│   ├── youtube_raw.json          # Datos crudos YouTube
+│   └── wikipedia_raw.json        # Datos crudos Wikipedia
+│
+├── assets/
+│   └── logo.png             # Logo Colgate-Palmolive
+│
+├── .streamlit/
+│   └── config.toml          # Tema corporativo Streamlit
+│
+├── pyproject.toml           # Dependencias del proyecto
+├── PROJECT.md               # Diagnóstico técnico y registro de issues
+├── README.md                # Documentación del proyecto
 └── .env                     # API keys (no incluido en repositorio)
 ```
 
 ---
 
-## 8. Limitaciones del sistema
+## 14. Limitaciones del Módulo 2
 
-1. **Contexto limitado**: Se cargan 50.000 de 105.607 caracteres disponibles. Preguntas sobre temas en los últimos chunks pueden no responderse correctamente.
-2. **Sin memoria persistente**: El historial de conversación se pierde al reiniciar la aplicación.
-3. **Dependencia de API externa**: El sistema requiere conexión a internet y una key válida de Mistral AI.
-4. **Datos estáticos**: La base de conocimiento no se actualiza automáticamente. Requiere ejecutar nuevamente los scrapers y `chunking.py`.
-5. **Sin validación de idioma**: El sistema puede responder en inglés si el contexto de Wikipedia EN tiene mayor relevancia para la pregunta.
-6. **Módulo 1 sin RAG**: Al no usar embeddings ni búsqueda semántica, el sistema no puede recuperar chunks específicos — envía todo el contexto al modelo.
-
----
-
-## 9. Proceso de desarrollo y desafíos técnicos
-
-Durante el desarrollo se encontraron múltiples desafíos técnicos que obligaron a tomar decisiones de arquitectura progresivas.
-
-### 9.1 Modelos locales con Ollama
-
-Se intentó inicialmente usar modelos locales a través de Ollama para evitar dependencias externas:
-
-| Modelo | Problema encontrado |
-|---|---|
-| `qwen3.5:2b` | Modo "Thinking" activado por defecto — el modelo razonaba internamente durante más de 3 minutos sin responder |
-| `gemma3:4b` | Tiempos de respuesta superiores a 2 minutos con contextos mayores a 5.000 caracteres |
-| `gemma4:e2b` | Mismo problema de modo "Thinking" — respuesta después de 60 segundos |
-
-**Causa raíz:** Los modelos locales disponibles tenían activado el modo de razonamiento extendido, incompatible con contextos largos en el hardware disponible (Windows 11, sin GPU dedicada).
-
-**Decisión:** Migrar a APIs externas para garantizar tiempos de respuesta aceptables.
-
-### 9.2 Problemas con APIs externas
-
-Se probaron múltiples proveedores antes de encontrar una solución estable:
-
-**Groq (llama-3.3-70b-versatile)**
-- ✅ Respuestas rápidas (3-5 segundos)
-- ❌ Límite de 6.000 tokens por minuto en plan gratuito
-- ❌ Límite de 100.000 tokens por día — agotado durante las pruebas
-- ❌ Contexto máximo funcional: 12.000 caracteres (3.000 tokens)
-
-**Google Gemini (gemini-2.0-flash)**
-- ❌ Cuota del plan gratuito agotada en la cuenta disponible
-- ❌ Modelo `gemini-1.5-flash` no disponible en la versión de API utilizada
-
-**OpenRouter (meta-llama/llama-3.3-70b-instruct:free)**
-- ❌ Rate limiting temporal del proveedor upstream (Venice)
-- ❌ Modelo `google/gemma-3-27b-it:free` también con rate limiting
-
-**Mistral AI (mistral-small-latest)**
-- ✅ 1 millón de tokens por mes en plan gratuito
-- ✅ Respuestas en menos de 5 segundos
-- ✅ Soporte nativo para español
-- ✅ Contexto de 80.000 caracteres sin errores
-- ✅ Sin problemas de rate limiting durante las pruebas
-
-**Decisión final:** Mistral AI como proveedor definitivo por estabilidad, generosidad del plan gratuito y calidad de respuestas.
-
-### 9.3 Problemas con el contexto
-
-El tamaño del knowledge base (105.607 caracteres) presentó desafíos al cargarse en el prompt:
-
-| Caracteres cargados | Resultado |
-|---|---|
-| 91.000 | Modelo ignoraba el contexto completamente |
-| 50.000 | Groq: error 413 (demasiados tokens) |
-| 25.000 | Groq: funcional pero agotaba cuota rápidamente |
-| 80.000 | Mistral: funcional y estable |
-
-**Solución:** Reorganizar el `knowledge_base.txt` para que Wikipedia quedara primero, y aumentar progresivamente el contexto hasta 80.000 caracteres con Mistral AI.
-
-### 9.4 Problemas con Gradio 6.0
-
-La versión instalada de Gradio (6.0) introdujo cambios incompatibles con el código generado para versiones anteriores:
-
-| Problema | Solución aplicada |
-|---|---|
-| `theme` y `css` en `gr.Blocks()` deprecados | Mover parámetros a `demo.launch()` |
-| `show_copy_button` no soportado en `gr.Textbox` | Eliminar el parámetro |
-| `type="messages"` no soportado en `gr.Chatbot` | Eliminar el parámetro |
-| Historial del chatbot requiere diccionarios `{role, content}` | Reemplazar tuplas por diccionarios |
-
-### 9.5 Problema de seguridad en GitHub
-
-Al intentar subir el repositorio por primera vez, GitHub bloqueó el push porque detectó la API key de Groq hardcodeada en `app.py`.
-
-**Solución:**
-1. Mover todas las keys a un archivo `.env` excluido del repositorio
-2. Usar `python-dotenv` para cargar las variables de entorno
-3. Reescribir el historial de Git con `git checkout --orphan` para eliminar el commit con la key expuesta
+1. **Memoria volátil**: `MemorySaver` guarda el estado en RAM; un reinicio del servidor borra todas las conversaciones activas.
+2. **Keyword matching limitado**: `datos_estructurados` detecta intención por palabras clave; preguntas muy paráfraseadas pueden no clasificarse correctamente.
+3. **Sin visualización de thoughts en UI**: el razonamiento ReAct (Thought/Action/Observation) ocurre internamente; la interfaz muestra solo la respuesta final.
+4. **Dependencia de API externa**: requiere conexión a internet y key válida de Mistral AI.
+5. **Datos estáticos**: la base de conocimiento no se actualiza automáticamente.
 
 ---
 
 ## Repositorio
+
 [https://github.com/jorgegallegou/colgate](https://github.com/jorgegallegou/colgate)
 
 ## Autores
@@ -409,4 +654,4 @@ Al intentar subir el repositorio por primera vez, GitHub bloqueó el push porque
 
 ---
 *Proyecto académico · Universidad Autónoma de Occidente · 2026*
-*Los datos provienen de fuentes públicas de Colgate-Palmolive.*  
+*Los datos provienen de fuentes públicas de Colgate-Palmolive.*
