@@ -13,8 +13,7 @@ def _logo_b64() -> str:
     return ""
 
 LOGO_B64    = _logo_b64()
-LOGO_PATH   = Path("assets/logo.png")
-AVATAR_BOT  = LOGO_PATH if LOGO_PATH.exists() else "🦷"
+AVATAR_BOT  = "🦷"
 AVATAR_USER = "👤"
 
 BIENVENIDA = (
