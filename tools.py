@@ -25,7 +25,7 @@ def _normalizar(texto: str) -> str:
 # ── Carga de recursos con caché de Streamlit ───────────────────────────────────
 @_cache
 def _cargar_recursos():
-    print("🔧 Cargando herramientas del agente...")
+    print("Cargando herramientas del agente...")
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,
         model_kwargs={"device": "cpu"},
@@ -37,7 +37,7 @@ def _cargar_recursos():
         allow_dangerous_deserialization=True,
     )
     datos = json.loads(STRUCTURED_PATH.read_text(encoding="utf-8"))
-    print("✓ Herramientas cargadas")
+    print("Herramientas cargadas")
     return embeddings, vectorstore, datos
 
 _embeddings, _vectorstore, _datos_estructurados = _cargar_recursos()

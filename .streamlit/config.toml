@@ -1,6 +1,3 @@
-[runner]
-fastRerenderEnabled = true
-
 [logger]
 level = "error"
 
