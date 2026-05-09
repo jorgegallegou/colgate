@@ -1,0 +1,5 @@
+[runner]
+fastRerenderEnabled = false
+
+[logger]
+level = "error"
