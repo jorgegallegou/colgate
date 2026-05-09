@@ -596,6 +596,8 @@ Cree un archivo `.env` en la raíz del proyecto:
 
 ```
 MISTRAL_API_KEY=su_key_aquí
+TRANSFORMERS_VERBOSITY=error   # suprime warnings de transformers >= 4.51
+# HF_TOKEN=hf_xxxx            # opcional — el modelo de embeddings es público
 ```
 
 ### Uso
@@ -662,7 +664,7 @@ colgate/
 
 1. **Memoria volátil**: `MemorySaver` guarda el estado en RAM; un reinicio del servidor borra todas las conversaciones activas.
 2. **Keyword matching limitado**: `datos_estructurados` detecta intención por palabras clave; preguntas muy paráfraseadas pueden no clasificarse correctamente.
-3. **Visualización de thoughts opcional**: el razonamiento ReAct (herramienta seleccionada + resultado recuperado) se muestra bajo cada respuesta en un `st.expander` colapsable ("🧠 Ver razonamiento del agente"). Solo aparece cuando el agente invocó al menos una herramienta.
+3. **Carga inicial lenta**: la primera visita al browser tarda ~5-10 s mientras se carga el modelo de embeddings en memoria; las visitas siguientes son instantáneas. Un spinner informa al usuario durante esta espera. La visualización del razonamiento ReAct (herramienta seleccionada + resultado recuperado) está disponible bajo cada respuesta en el expander "🧠 Ver razonamiento del agente".
 4. **Dependencia de API externa**: requiere conexión a internet y key válida de Mistral AI.
 5. **Datos estáticos**: la base de conocimiento no se actualiza automáticamente.
 

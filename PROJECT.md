@@ -29,6 +29,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | BUG-02 | Baja | ✅ Corregido | **Línea en blanco con espacios en línea 1**: causaba warnings en linters. → Eliminada en reescritura del archivo. |
 | **BUG-NEW-02** | **Alta** | ✅ Corregido | **Respuestas acumuladas por estado corrupto en MemorySaver**: cuando `agente.invoke()` fallaba a mitad de ejecución, LangGraph persistía el mensaje del usuario en el checkpointer sin respuesta del asistente. En el siguiente turno exitoso, el agente veía todos los mensajes acumulados sin responder y los contestaba juntos, generando alucinaciones. → Al detectar un error, `app_v2.py` resetea `thread_id` inmediatamente, abandonando el estado corrupto antes del siguiente turno. |
 | **UI-08** | **Alta** | ✅ Corregido | **Razonamiento ReAct no visible en UI**: los pasos Thought/Action/Observation ocurrían internamente sin visibilidad. → Nueva función `preguntar_con_pasos()` en `agent.py` (con `_extraer_pasos()`) devuelve los pasos del turno actual; `app_v2.py` los muestra en `st.expander("🧠 Ver razonamiento del agente")` con herramienta seleccionada y extracto del contexto recuperado. |
+| **UI-09** | **Media** | ✅ Corregido | **Pantalla en blanco durante la primera carga**: la primera visita al browser mostraba pantalla vacía ~10 s mientras el modelo de embeddings cargaba, sin feedback al usuario. → Import de `agent` movido a `@st.cache_resource` con carga lazy; spinner "⚙️ Iniciando el asistente virtual, un momento..." visible durante la espera. Constantes y `nueva_sesion()` definidas localmente en `app_v2.py` para no bloquear el arranque. |
 
 ---
 
@@ -69,6 +70,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | TLS-02 | Baja | ✅ Corregido | **Keyword matching devolvía categoría equivocada**: el scoring de FAQs usaba solapamiento de palabras sin filtrar stopwords, haciendo que preguntas de horario devolvieran la FAQ de teléfono. → Las categorías con palabras clave específicas se evalúan primero; las FAQs actúan como fallback con stopwords filtradas y score mínimo >= 2. |
 | TLS-03 | Baja | Pendiente | **`_cache` fallback silencioso** en ejecución CLI sin Streamlit. |
 | TLS-04 | Baja | ✅ Corregido | **Sin docstrings**: `_cargar_recursos()`, `buscar_en_base_documental()` y `buscar_en_datos_estructurados()` carecían de documentación inline. → Docstrings añadidos a las tres funciones. |
+| TLS-05 | Media | ✅ Corregido | **~400 warnings `[transformers] Accessing __path__`**: `transformers >= 4.51` emite un aviso por cada módulo de procesamiento de imagen al cargar el modelo de embeddings, saturando el log con ~400 líneas de ruido. → Doble supresión: `warnings.filterwarnings("ignore", message=".*Accessing.*__path__.*")` para llamadas vía `warnings.warn`, y `logging.getLogger("transformers").setLevel(logging.ERROR)` para el sistema de logging. Añadido también `TRANSFORMERS_VERBOSITY=error` en `.env` como guardia adicional. |
 | **BUG-NEW-01** | **Alta** | ✅ Corregido | **`UnicodeEncodeError` en consola Windows**: los `print()` con emojis (`🔧`, `✓`) dentro de `_cargar_recursos()` causaban crash al iniciar la app (codificación cp1252). La excepción dentro de `@st.cache_resource` impedía cargar el vectorstore y bloqueaba el arranque completo. → Emojis eliminados de los `print()`. |
 
 ---
@@ -101,6 +103,7 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
+| *(pendiente)* | fix/feat: suprimir warnings transformers `__path__` (TLS-05) y spinner de carga inicial (UI-09) |
 | `c0bc12a` | fix: corregir TLS-02 — keyword matching tiene prioridad sobre FAQ scoring |
 | `6add79b` | feat: docstrings, razonamiento ReAct en UI y diagrama Mermaid |
 | `8bd5750` | fix: usar emoji como avatar del asistente en lugar de Path object |

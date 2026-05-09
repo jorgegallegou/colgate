@@ -1,9 +1,21 @@
 import json
+import logging
+import os
 import unicodedata
+import warnings
 from pathlib import Path
+
+# Suprime los ~400 avisos de __path__ que emite transformers >= 4.51
+# Doble mecanismo: env var (logging) + filterwarnings (warnings.warn)
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+warnings.filterwarnings("ignore", message=".*Accessing.*__path__.*")
+
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.tools import Tool
+
+# Por si el logger ya fue inicializado antes de leer el env var
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 try:
     import streamlit as st
@@ -27,6 +39,7 @@ def _normalizar(texto: str) -> str:
 def _cargar_recursos():
     """Carga embeddings, vectorstore FAISS y JSON estructurado una sola vez (caché Streamlit)."""
     print("Cargando herramientas del agente...")
+    logging.getLogger("transformers").setLevel(logging.ERROR)
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,
         model_kwargs={"device": "cpu"},

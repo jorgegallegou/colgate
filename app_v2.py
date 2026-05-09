@@ -1,11 +1,10 @@
 import base64
+import uuid
 from pathlib import Path
 
 import streamlit as st
 
-from agent import preguntar_con_pasos, nueva_sesion, ERROR_GENERICO, ERROR_RATE_LIMIT
-
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# ── Helpers (sin importar agent al arranque) ───────────────────────────────────
 def _logo_b64() -> str:
     p = Path("assets/logo.png")
     if p.exists():
@@ -15,6 +14,13 @@ def _logo_b64() -> str:
 LOGO_B64    = _logo_b64()
 AVATAR_BOT  = "🦷"
 AVATAR_USER = "👤"
+
+# Centinelas replicados para no depender del import de agent
+ERROR_GENERICO   = "__ERROR__"
+ERROR_RATE_LIMIT = "__RATE_LIMIT__"
+
+def nueva_sesion() -> str:
+    return str(uuid.uuid4())
 
 BIENVENIDA = (
     "¡Hola! Soy el asistente virtual de **Colgate-Palmolive Colombia**. "
@@ -84,6 +90,15 @@ st.set_page_config(
 )
 
 st.markdown(CSS, unsafe_allow_html=True)
+
+# ── Carga del agente con spinner (solo la primera vez) ─────────────────────────
+@st.cache_resource(show_spinner=False)
+def _cargar_agente():
+    from agent import preguntar_con_pasos as _fn
+    return _fn
+
+with st.spinner("⚙️ Iniciando el asistente virtual, un momento..."):
+    preguntar_con_pasos = _cargar_agente()
 
 # ── Estado de sesión ───────────────────────────────────────────────────────────
 if "thread_id" not in st.session_state:
