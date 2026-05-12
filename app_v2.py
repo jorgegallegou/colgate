@@ -106,7 +106,7 @@ if "thread_id" not in st.session_state:
     if not thread_id:
         thread_id = nueva_sesion()
         st.components.v1.html(
-            f"<script>document.cookie='thread_id={thread_id};path=/;max-age=2592000'</script>",
+            f"<script>document.cookie='thread_id={thread_id};path=/;max-age=2592000;SameSite=Lax'</script>",
             height=0,
         )
     st.session_state.thread_id = thread_id

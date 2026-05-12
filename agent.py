@@ -1,11 +1,11 @@
 import logging
 import os
 import uuid
-import psycopg
 from dotenv import load_dotenv
 from langchain_mistralai import ChatMistralAI
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.prebuilt import create_react_agent
+from psycopg_pool import ConnectionPool
 
 from prompts import SYSTEM_PROMPT
 from tools import TOOLS
@@ -30,8 +30,14 @@ llm = ChatMistralAI(
 )
 
 # ── Checkpointer (memoria persistente en PostgreSQL) ──────────────────────────
-conn        = psycopg.connect(POSTGRES_URI, autocommit=True)
-checkpointer = PostgresSaver(conn)
+# ConnectionPool gestiona reconexiones automáticas si la BD cae y vuelve.
+_pool = ConnectionPool(
+    POSTGRES_URI,
+    max_size=5,
+    open=True,
+    kwargs={"autocommit": True},
+)
+checkpointer = PostgresSaver(_pool)
 checkpointer.setup()
 
 # ── Agente LangGraph ───────────────────────────────────────────────────────────
