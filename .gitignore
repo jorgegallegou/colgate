@@ -6,3 +6,4 @@ uv.lock
 .env
 .gradio/
 data/vectorstore/
+db/

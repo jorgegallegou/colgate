@@ -287,12 +287,17 @@ Cada sesión de usuario recibe un `thread_id` único (UUID v4) que se guarda en 
 
 ```python
 # agent.py — configuración del checkpointer con PostgreSQL
-import psycopg
+from psycopg_pool import ConnectionPool
 from langgraph.checkpoint.postgres import PostgresSaver
 
 POSTGRES_URI = os.environ.get("POSTGRES_URI")
-conn = psycopg.connect(POSTGRES_URI, autocommit=True)
-checkpointer = PostgresSaver(conn)
+_pool = ConnectionPool(
+    POSTGRES_URI,
+    max_size=5,
+    open=True,
+    kwargs={"autocommit": True},
+)
+checkpointer = PostgresSaver(_pool)
 checkpointer.setup()  # crea las tablas automáticamente en la primera ejecución
 
 agente = create_react_agent(
@@ -600,7 +605,10 @@ Cree un archivo `.env` en la raíz del proyecto:
 
 ```
 MISTRAL_API_KEY=su_key_aquí
-POSTGRES_URI=postgresql://postgres:postgres@localhost:5432/colgate?sslmode=disable
+POSTGRES_USER=colgate
+POSTGRES_DB=colgate_db
+POSTGRES_PASSWORD=su_password_aquí
+POSTGRES_URI=postgresql://colgate:su_password_aquí@localhost:5432/colgate_db
 TRANSFORMERS_VERBOSITY=error   # suprime warnings de transformers >= 4.51
 # HF_TOKEN=hf_xxxx            # opcional — el modelo de embeddings es público
 ```
@@ -609,15 +617,7 @@ TRANSFORMERS_VERBOSITY=error   # suprime warnings de transformers >= 4.51
 
 ```bash
 # 0. Levantar PostgreSQL en Docker (memoria persistente)
-docker start colgate-memory
-
-# Si es la primera vez (descarga la imagen y crea el contenedor):
-docker run --name colgate-memory \
-  -e POSTGRES_USER=<usuario> \
-  -e POSTGRES_PASSWORD=<contraseña> \
-  -e POSTGRES_DB=<nombre_bd> \
-  -p 5432:5432 \
-  -d postgres:16
+docker compose up -d
 
 # 1. (Solo primera vez) Construir el vectorstore FAISS
 uv run python build_vectorstore.py
@@ -634,7 +634,7 @@ uv run python agent.py
 
 La aplicación Streamlit estará disponible en `http://localhost:8501`
 
-> ⚠️ **Importante para la demo:** Docker Desktop debe estar corriendo antes de lanzar la app. Verificar con `docker ps` que el contenedor `colgate-memory` aparece con status `Up`.
+> ⚠️ **Importante para la demo:** Docker Desktop debe estar corriendo antes de lanzar la app. Verificar con `docker compose ps` que el servicio `database` aparece con status `running`.
 
 ---
 
@@ -671,16 +671,17 @@ colgate/
 ├── .streamlit/
 │   └── config.toml          # Tema corporativo Streamlit
 │
+├── docker-compose.yml       # PostgreSQL 16 para memoria persistente
 ├── pyproject.toml           # Dependencias del proyecto
 ├── PROJECT.md               # Diagnóstico técnico y registro de issues
 ├── README.md                # Documentación del proyecto
-└── .env                     # API keys (no incluido en repositorio)
+└── .env                     # API keys y credenciales (no incluido en repositorio)
 ```
 
-**Infraestructura externa:**
+**Infraestructura (Docker Compose):**
 ```
-Docker
-└── colgate-memory (postgres:16)
+docker-compose.yml
+└── service: database (postgres:16)
     └── Puerto 5432 → historial de conversaciones por thread_id
 ```
 
@@ -688,7 +689,7 @@ Docker
 
 ## 14. Limitaciones del Módulo 2
 
-1. **Dependencia de Docker**: el contenedor PostgreSQL debe estar activo antes de lanzar la app. Si Docker no está corriendo, el agente no puede iniciar. Solución: `docker start colgate-memory`.
+1. **Dependencia de Docker**: el contenedor PostgreSQL debe estar activo antes de lanzar la app. Si Docker no está corriendo, el agente no puede iniciar. Solución: `docker compose up -d`.
 2. **Persistencia local al navegador**: el `thread_id` se guarda en una cookie del navegador. Un usuario que cambie de dispositivo o borre las cookies inicia una conversación nueva.
 3. **Keyword matching limitado**: `datos_estructurados` detecta intención por palabras clave; preguntas muy parafraseadas pueden no clasificarse correctamente.
 4. **Carga inicial lenta**: la primera visita al browser tarda ~5-10 s mientras se carga el modelo de embeddings en memoria; las visitas siguientes son instantáneas.

@@ -1,7 +1,7 @@
 # PROJECT.md — Diagnóstico del Asistente Virtual Colgate-Palmolive
 
-> Fecha: 2026-05-11  
-> Repositorio: `D:\tecnicas_IA\colgate`  
+> Fecha: 2026-05-12  
+> Repositorio: `C:\colgate`  
 > App activa: `app_v2.py` (Streamlit) — `app.py` (Gradio, versión anterior)
 
 ---
@@ -105,8 +105,9 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 | # | Severidad | Estado | Problema / Decisión |
 |---|-----------|--------|----------|
-| **INF-01** | **Alta** | ✅ Implementado | **Memoria volátil requería solución de persistencia**: el profesor confirmó que se requiere persistencia real en disco. → PostgreSQL `postgres:16` desplegado en Docker con contenedor `colgate-memory` (puerto 5432). URI de conexión en `.env` como `POSTGRES_URI`. `PostgresSaver.setup()` crea las tablas automáticamente. Verificado que el historial sobrevive reinicios completos de la app. |
-| **INF-02** | **Media** | ✅ Documentado | **Docker no arranca automáticamente con Windows**: el contenedor debe levantarse manualmente antes de lanzar la app. → Documentado en README sección 12 con comando `docker start colgate-memory` y advertencia para la demo. |
+| **INF-01** | **Alta** | ✅ Implementado | **Memoria volátil requería solución de persistencia**: el profesor confirmó que se requiere persistencia real en disco. → PostgreSQL `postgres:16` desplegado en Docker con contenedor `database` (puerto 5432). URI de conexión en `.env` como `POSTGRES_URI`. `PostgresSaver.setup()` crea las tablas automáticamente. Verificado que el historial sobrevive reinicios completos de la app. |
+| **INF-02** | **Media** | ✅ Resuelto | **Docker no arranca automáticamente con Windows**: el contenedor debe levantarse manualmente antes de lanzar la app. → `docker-compose.yml` agregado al repositorio. Comando unificado: `docker compose up -d`. Credenciales leídas desde `.env` via `${POSTGRES_USER}`, `${POSTGRES_DB}`, `${POSTGRES_PASSWORD}`. |
+| **INF-03** | **Media** | ✅ Implementado | **Setup manual de contenedor PostgreSQL**: requería `docker run` con flags explícitos en cada instalación nueva. → `docker-compose.yml` añadido con servicio `database` (postgres:16), healthcheck automático y volumen montado en `./db/`. `db/` agregado a `.gitignore` para excluir datos locales del repositorio. |
 
 ---
 
@@ -120,6 +121,11 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
+| `3263bbb` | fix: conexión PostgreSQL con pool, cookie SameSite, tests y fix redes sociales |
+| `c371167` | fix: agregar 'redes sociales' como keyword en datos_estructurados |
+| `d451eb0` | fix: corregir 7 bugs detectados en revisión del Taller 2 |
+| `627236b` | docs: actualizar hashes y limpiar credenciales en PROJECT.md |
+| `92e0215` | docs: actualizar hashes y limpiar credenciales en PROJECT.md |
 | `ba1d198` | feat: persistencia de memoria con PostgresSaver en Docker + Python 3.12 + docs actualizados |
 | `aee66f5` | fix: revertir escape de asteriscos, mantener solo escape de signo dolar |
 | `7bc6afd` | fix: escapar caracteres Markdown en respuestas para evitar renderizado incorrecto |
@@ -142,7 +148,6 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 |---|-----------|-------------|
 | TLS-03 | Baja | `_cache` fallback silencioso en ejecución CLI sin Streamlit |
 | DEP-01 | Media | Evaluar separar dependencias de scraping en grupo opcional de `pyproject.toml` |
-| INF-02 | Media | Docker no arranca automáticamente con Windows — requiere `docker start colgate-memory` manual antes de cada sesión |
 
 ---
 
@@ -161,12 +166,12 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 | `data/datos_estructurados.json` | Datos de contacto, horarios, sedes, marcas, etc. |
 | `app.py` | Versión anterior con Gradio (referencia de estilo) |
 
-## Infraestructura externa
+## Infraestructura
 
 | Componente | Detalle |
 |-----------|---------|
 | Docker Desktop | Requerido antes de lanzar la app |
-| Contenedor | `colgate-memory` — `postgres:16` — puerto 5432 |
-| Base de datos | `colgate` — usuario definido en `.env` |
-| Arranque | `docker start colgate-memory` |
+| Servicio | `database` — `postgres:16` — puerto 5432 |
+| Base de datos | Credenciales en `.env` (`POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`) |
+| Arranque | `docker compose up -d` |
 | Primera vez | Ver README sección 12 |
