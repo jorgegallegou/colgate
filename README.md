@@ -613,9 +613,9 @@ docker start colgate-memory
 
 # Si es la primera vez (descarga la imagen y crea el contenedor):
 docker run --name colgate-memory \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=colgate \
+  -e POSTGRES_USER=<usuario> \
+  -e POSTGRES_PASSWORD=<contraseña> \
+  -e POSTGRES_DB=<nombre_bd> \
   -p 5432:5432 \
   -d postgres:16
 
