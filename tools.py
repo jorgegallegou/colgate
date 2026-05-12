@@ -22,7 +22,7 @@ logging.getLogger("transformers").setLevel(logging.ERROR)
 try:
     import streamlit as st
     _cache = st.cache_resource
-except Exception:
+except ImportError:
     def _cache(fn):
         return fn
 
@@ -99,7 +99,7 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
         marcas = _datos_estructurados["marcas_principales_colombia"]
         return "Marcas en Colombia: " + ", ".join(marcas)
 
-    if any(p in q for p in ["fundacion", "social", "programa", "sonrisa", "parque", "comunidad"]):
+    if any(p in q for p in ["fundacion", "programa social", "sonrisa", "parque", "comunidad"]):
         ps = _datos_estructurados["programas_sociales"]
         return (
             f"{ps['fundacion']} (fundada en {ps['año_creacion_fundacion']}). "
@@ -119,6 +119,10 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
             f"Facebook: {rs['facebook']}\n"
             f"Instagram: {rs['instagram']}"
         )
+
+    if any(p in q for p in ["correo", "email", "mail"]):
+        c = _datos_estructurados["contacto"]
+        return f"Correo electrónico: {c['correo_consumidor']}"
 
     if any(p in q for p in ["telefono", "llamar", "linea", "numero", "contacto", "comunicar", "atencion"]):
         c = _datos_estructurados["contacto"]

@@ -1,7 +1,7 @@
 [project]
 name = "colgate-kb"
 version = "0.1.0"
-description = "Add your description here"
+description = "Agente conversacional con RAG y memoria persistente para Colgate-Palmolive Colombia"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,12 +10,8 @@ dependencies = [
     "gradio>=6.13.0",
     "langchain>=1.2.15",
     "langchain-community>=0.4.1",
-    "langchain-google-genai>=4.2.2",
-    "langchain-groq>=1.1.2",
     "langchain-huggingface>=1.2.2",
     "langchain-mistralai>=1.1.2",
-    "langchain-ollama>=1.1.0",
-    "langchain-openai>=1.2.1",
     "langgraph>=1.1.9",
     "langgraph-checkpoint-postgres>=3.0.5",
     "lxml>=6.1.0",

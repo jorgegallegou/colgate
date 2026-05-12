@@ -357,7 +357,7 @@ El profesor menciona `ConversationBufferMemory` (LangChain clásico) como refere
 **Implementación:**
 - Motor: FAISS (Facebook AI Similarity Search)
 - Embeddings: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
-- Índice: 137 chunks de 1.500 caracteres con solapamiento de 150
+- Índice: 137 chunks de 600 caracteres con solapamiento de 100
 - Recuperación: top-4 chunks por similitud coseno
 - Fuentes: Wikipedia, sitio web oficial, canal YouTube corporativo
 
