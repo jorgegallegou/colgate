@@ -63,7 +63,7 @@ h1 {
     font-weight: 700 !important;
 }
 
-/* Burbuja del asistente — cubre avatar estándar y avatar imagen personalizada */
+/* Burbuja del asistente */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]),
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarImage"]) {
     background: #F4F6FA;
@@ -102,7 +102,14 @@ with st.spinner("⚙️ Iniciando el asistente virtual, un momento..."):
 
 # ── Estado de sesión ───────────────────────────────────────────────────────────
 if "thread_id" not in st.session_state:
-    st.session_state.thread_id = nueva_sesion()
+    thread_id = st.context.cookies.get("thread_id")
+    if not thread_id:
+        thread_id = nueva_sesion()
+        st.components.v1.html(
+            f"<script>document.cookie='thread_id={thread_id};path=/;max-age=2592000'</script>",
+            height=0,
+        )
+    st.session_state.thread_id = thread_id
 if "mensajes" not in st.session_state:
     st.session_state.mensajes = []
 

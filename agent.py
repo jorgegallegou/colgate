@@ -1,9 +1,10 @@
 import logging
 import os
 import uuid
+import psycopg
 from dotenv import load_dotenv
 from langchain_mistralai import ChatMistralAI
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.prebuilt import create_react_agent
 
 from prompts import SYSTEM_PROMPT
@@ -17,8 +18,9 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # ── Configuración ──────────────────────────────────────────────────────────────
-MODEL_NAME  = "mistral-small-latest"
-TEMPERATURE = 0.3
+MODEL_NAME   = "mistral-small-latest"
+TEMPERATURE  = 0.3
+POSTGRES_URI = os.environ.get("POSTGRES_URI")
 
 # ── LLM ───────────────────────────────────────────────────────────────────────
 llm = ChatMistralAI(
@@ -27,8 +29,10 @@ llm = ChatMistralAI(
     api_key=os.environ.get("MISTRAL_API_KEY"),
 )
 
-# ── Checkpointer (memoria persistente por sesión) ──────────────────────────────
-checkpointer = MemorySaver()
+# ── Checkpointer (memoria persistente en PostgreSQL) ──────────────────────────
+conn        = psycopg.connect(POSTGRES_URI, autocommit=True)
+checkpointer = PostgresSaver(conn)
+checkpointer.setup()
 
 # ── Agente LangGraph ───────────────────────────────────────────────────────────
 agente = create_react_agent(
