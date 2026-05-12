@@ -111,7 +111,7 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
         s = _datos_estructurados["sostenibilidad"]
         return f"{s['meta_empaques']}. {s['compromiso_ambiental']}."
 
-    if any(p in q for p in ["web", "sitio", "pagina", "instagram", "facebook", "red social", "internet"]):
+    if any(p in q for p in ["web", "sitio", "pagina", "instagram", "facebook", "red social", "redes sociales", "internet"]):
         c = _datos_estructurados["contacto"]
         rs = c["redes_sociales"]
         return (
