@@ -3,28 +3,36 @@ name = "colgate-kb"
 version = "0.1.0"
 description = "Agente conversacional con RAG y memoria persistente para Colgate-Palmolive Colombia"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "beautifulsoup4>=4.14.3",
     "faiss-cpu>=1.13.2",
-    "gradio>=6.13.0",
     "langchain>=1.2.15",
     "langchain-community>=0.4.1",
     "langchain-huggingface>=1.2.2",
     "langchain-mistralai>=1.1.2",
     "langgraph>=1.1.9",
     "langgraph-checkpoint-postgres>=3.0.5",
-    "lxml>=6.1.0",
-    "pdfplumber>=0.11.9",
     "psycopg[binary]>=3.3.4",
     "psycopg-pool>=3.3.1",
-    "pytest>=8.3.5",
     "python-dotenv>=1.2.2",
-    "requests>=2.33.1",
-    "selenium>=4.43.0",
     "sentence-transformers>=5.4.1",
     "streamlit>=1.57.0",
+]
+
+[project.optional-dependencies]
+scraping = [
+    "beautifulsoup4>=4.14.3",
+    "lxml>=6.1.0",
+    "pdfplumber>=0.11.9",
+    "requests>=2.33.1",
+    "selenium>=4.43.0",
     "trafilatura>=2.0.0",
     "webdriver-manager>=4.0.2",
     "yt-dlp>=2026.3.17",
+]
+gradio = [
+    "gradio>=6.13.0",
+]
+dev = [
+    "pytest>=8.3.5",
 ]

@@ -83,7 +83,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
-| DEP-01 | Media | Pendiente | **Dependencias de scraping mezcladas con la app**. Se mantienen para no romper el flujo de reconstrucción del knowledge base. |
+| DEP-01 | Media | ✅ Corregido | **Dependencias de scraping mezcladas con la app**. → Separadas en grupos opcionales en `pyproject.toml`: `scraping` (selenium, yt-dlp, trafilatura, etc.), `gradio` (Módulo 1) y `dev` (pytest). La app base instala solo con `uv sync`; los scrapers con `uv sync --extra scraping`. |
 | DEP-02 | Baja | ✅ Corregido | `requires-python = ">=3.14"` demasiado restrictivo. → Corregido a `>=3.12`. |
 | **DEP-03** | **Alta** | ✅ Corregido | **Python 3.14 incompatible con `torch`**: `torch` no tiene soporte estable para Python 3.14, causando `KeyboardInterrupt` al cargar el modelo de embeddings HuggingFace. → Entorno virtual recreado con Python 3.12 (`uv venv --python 3.12` + `uv sync`). |
 | **DEP-04** | **Alta** | ✅ Corregido | **Sin dependencias de persistencia**: el proyecto no tenía soporte para checkpointer en base de datos. → Agregados `langgraph-checkpoint-postgres==3.0.5`, `psycopg==3.3.4`, `psycopg-pool==3.3.1` y `psycopg-binary==3.3.4` via `uv add`. |
@@ -141,7 +141,6 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 | # | Severidad | Descripción |
 |---|-----------|-------------|
 | TLS-03 | Baja | `_cache` fallback silencioso en ejecución CLI sin Streamlit |
-| DEP-01 | Media | Evaluar separar dependencias de scraping en grupo opcional de `pyproject.toml` |
 | INF-02 | Media | Docker no arranca automáticamente con Windows — requiere `docker compose up -d` manual antes de cada sesión |
 
 ---
