@@ -120,9 +120,9 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
-| *(pendiente)* | feat: persistencia de memoria con PostgresSaver en Docker |
-| *(pendiente)* | fix: recrear entorno virtual con Python 3.12 — torch incompatible con 3.14 |
-| *(pendiente)* | docs: actualizar README y PROJECT.md con arquitectura de persistencia |
+| `ba1d198` | feat: persistencia de memoria con PostgresSaver en Docker + Python 3.12 + docs actualizados |
+| `aee66f5` | fix: revertir escape de asteriscos, mantener solo escape de signo dolar |
+| `7bc6afd` | fix: escapar caracteres Markdown en respuestas para evitar renderizado incorrecto |
 | `c0bc12a` | fix: corregir TLS-02 — keyword matching tiene prioridad sobre FAQ scoring |
 | `6add79b` | feat: docstrings, razonamiento ReAct en UI y diagrama Mermaid |
 | `8bd5750` | fix: usar emoji como avatar del asistente en lugar de Path object |
@@ -167,6 +167,6 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 |-----------|---------|
 | Docker Desktop | Requerido antes de lanzar la app |
 | Contenedor | `colgate-memory` — `postgres:16` — puerto 5432 |
-| Base de datos | `colgate` — usuario `postgres` |
+| Base de datos | `colgate` — usuario definido en `.env` |
 | Arranque | `docker start colgate-memory` |
-| Primera vez | `docker run --name colgate-memory -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=colgate -p 5432:5432 -d postgres:16` |
+| Primera vez | Ver README sección 12 |
