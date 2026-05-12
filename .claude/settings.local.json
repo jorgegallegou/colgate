@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Stop-Process *)",
+      "PowerShell(cd \"D:\\\\tecnicas_IA\\\\colgate\"; $env:PYTHONUTF8 = \"1\"; .venv\\\\Scripts\\\\streamlit run app_v2.py)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:github.com)",
+      "PowerShell(Get-Process *)",
+      "Bash(streamlit run *)",
+      "PowerShell(streamlit run *)",
+      "PowerShell(python -m streamlit run app_v2.py)",
+      "PowerShell(uv run *)",
+      "Bash(timeout 15 uv run streamlit run app_v2.py)",
+      "Bash(uv run *)",
+      "Bash(ping -n 8 127.0.0.1)"
+    ]
+  }
+}
