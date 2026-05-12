@@ -604,14 +604,16 @@ uv sync
 Cree un archivo `.env` en la raíz del proyecto:
 
 ```
-MISTRAL_API_KEY=su_key_aquí
-POSTGRES_USER=colgate
-POSTGRES_DB=colgate_db
-POSTGRES_PASSWORD=su_password_aquí
-POSTGRES_URI=postgresql://colgate:su_password_aquí@localhost:5432/colgate_db
+MISTRAL_API_KEY=<su_key_de_mistral>
+POSTGRES_USER=<usuario_postgresql>
+POSTGRES_PASSWORD=<contraseña_postgresql>
+POSTGRES_DB=<nombre_base_de_datos>
+POSTGRES_URI=postgresql://<usuario_postgresql>:<contraseña_postgresql>@localhost:5432/<nombre_base_de_datos>?sslmode=disable
 TRANSFORMERS_VERBOSITY=error   # suprime warnings de transformers >= 4.51
-# HF_TOKEN=hf_xxxx            # opcional — el modelo de embeddings es público
+# HF_TOKEN=<su_token_de_huggingface>   # opcional — el modelo de embeddings es público
 ```
+
+> `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB` son leídas por `docker-compose.yml` para crear el contenedor. `POSTGRES_URI` es leída por `agent.py` para conectarse. Deben ser consistentes entre sí.
 
 ### Uso
 
