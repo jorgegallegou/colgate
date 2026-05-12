@@ -1,7 +1,7 @@
 # Sistema Q&A → Agente Conversacional · Colgate-Palmolive Colombia
 **Universidad Autónoma de Occidente · Técnicas Avanzadas de IA · 2026**
 
-Sistema de inteligencia artificial que evoluciona de un Q&A simple (Módulo 1) a un agente conversacional con memoria, RAG y herramientas especializadas (Módulo 2).
+Sistema de inteligencia artificial que evoluciona de un Q&A simple (Módulo 1) a un agente conversacional con memoria persistente, RAG y herramientas especializadas (Módulo 2).
 
 ---
 
@@ -268,11 +268,12 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 | Aspecto | Módulo 1 | Módulo 2 |
 |---------|----------|----------|
 | Interfaz | Gradio (3 pestañas) | Streamlit (chat continuo) |
-| Memoria | Solo últimos 8 turnos (manual) | MemorySaver por sesión UUID |
+| Memoria | Solo últimos 8 turnos (manual) | PostgresSaver — persistente en disco |
 | Recuperación | Todo el contexto en el prompt | RAG semántico (FAISS) |
 | Herramientas | 1 (prompt con contexto) | 2 (RAG + datos estructurados) |
 | Enrutamiento | Sin enrutamiento | Agente ReAct decide |
 | Framework | LangChain básico | LangGraph + LangChain |
+| Infraestructura | Solo Python | Python + Docker + PostgreSQL |
 
 ---
 
@@ -280,17 +281,25 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 
 ### 9.1 Implementación
 
-Se utilizó `MemorySaver` de LangGraph como checkpointer del agente. Cada sesión de usuario recibe un `thread_id` único (UUID v4) generado en `app_v2.py`. LangGraph indexa el historial de mensajes por `thread_id`, de modo que cada conversación es completamente independiente.
+Se utilizó `PostgresSaver` de LangGraph como checkpointer del agente. A diferencia de `MemorySaver` (que guarda el historial en RAM), `PostgresSaver` persiste cada conversación en una base de datos PostgreSQL corriendo en Docker. El historial sobrevive reinicios del servidor y recargas del navegador.
+
+Cada sesión de usuario recibe un `thread_id` único (UUID v4) que se guarda en una cookie del navegador con duración de 30 días. Al recargar la página, la app lee la cookie y recupera el historial completo desde PostgreSQL.
 
 ```python
-# agent.py — configuración del checkpointer
-checkpointer = MemorySaver()
+# agent.py — configuración del checkpointer con PostgreSQL
+import psycopg
+from langgraph.checkpoint.postgres import PostgresSaver
+
+POSTGRES_URI = os.environ.get("POSTGRES_URI")
+conn = psycopg.connect(POSTGRES_URI, autocommit=True)
+checkpointer = PostgresSaver(conn)
+checkpointer.setup()  # crea las tablas automáticamente en la primera ejecución
 
 agente = create_react_agent(
     model=llm,
     tools=TOOLS,
     prompt=SYSTEM_PROMPT,
-    checkpointer=checkpointer,   # memoria persistente por sesión
+    checkpointer=checkpointer,   # memoria persistente en PostgreSQL
 )
 
 # En cada invocación se pasa el thread_id
@@ -298,27 +307,43 @@ config = {"configurable": {"thread_id": thread_id}}
 resultado = agente.invoke({"messages": [...]}, config=config)
 ```
 
+```python
+# app_v2.py — persistencia del thread_id en cookie del navegador
+if "thread_id" not in st.session_state:
+    thread_id = st.context.cookies.get("thread_id")
+    if not thread_id:
+        thread_id = nueva_sesion()
+        st.components.v1.html(
+            f"<script>document.cookie='thread_id={thread_id};path=/;max-age=2592000'</script>",
+            height=0,
+        )
+    st.session_state.thread_id = thread_id
+```
+
 ### 9.2 Comparación con ConversationBufferMemory
 
-El profesor menciona `ConversationBufferMemory` (LangChain clásico) como referencia. La implementación con LangGraph es equivalente en función pero superior en integración:
+El profesor menciona `ConversationBufferMemory` (LangChain clásico) como referencia. La implementación con LangGraph es equivalente en función pero superior en integración y persistencia:
 
-| Característica | ConversationBufferMemory | LangGraph MemorySaver |
-|---|---|---|
-| Historial de mensajes | Manual, en variable | Automático, en grafo de estado |
-| Aislamiento por sesión | Requiere instancia por usuario | Nativo por `thread_id` |
-| Integración con herramientas | Requiere configuración adicional | Nativa en `create_react_agent` |
-| Pasos intermedios (thoughts) | No | Sí, accesibles en `messages` |
+| Característica | ConversationBufferMemory | LangGraph MemorySaver | LangGraph PostgresSaver |
+|---|---|---|---|
+| Historial de mensajes | Manual, en variable | Automático, en grafo de estado | Automático, en PostgreSQL |
+| Aislamiento por sesión | Requiere instancia por usuario | Nativo por `thread_id` | Nativo por `thread_id` |
+| Persistencia en disco | No | No | Sí |
+| Sobrevive reinicios | No | No | Sí |
+| Integración con herramientas | Requiere configuración adicional | Nativa | Nativa |
+| Pasos intermedios (thoughts) | No | Sí | Sí |
 
 ### 9.3 Beneficios
 
 - **Coherencia conversacional**: el agente recuerda el contexto de turnos anteriores y puede responder preguntas de seguimiento como "¿Y cuándo llegaron exactamente?".
+- **Persistencia real**: el historial sobrevive reinicios del servidor, recargas del navegador y cierres de pestaña.
 - **Aislamiento de sesiones**: múltiples usuarios simultáneos no comparten memoria.
 - **Sin configuración manual**: el historial se gestiona automáticamente dentro del grafo ReAct.
 
 ### 9.4 Limitaciones
 
-- **Memoria volátil**: `MemorySaver` guarda el estado en RAM. Si el servidor se reinicia, todas las conversaciones se pierden.
-- **Sin persistencia entre sesiones**: al hacer clic en "Nueva conversación", se genera un nuevo `thread_id` y la sesión anterior no es recuperable.
+- **Dependencia de Docker**: requiere que el contenedor PostgreSQL esté activo antes de lanzar la app. Si el contenedor no está corriendo, el agente no puede iniciar.
+- **Sin persistencia entre dispositivos**: la cookie del `thread_id` es local al navegador. Un usuario que cambie de dispositivo inicia una conversación nueva.
 - **Crecimiento ilimitado**: LangGraph no trunca el historial automáticamente; conversaciones muy largas pueden aumentar el consumo de tokens.
 
 ---
@@ -362,7 +387,7 @@ def buscar_en_base_documental(pregunta: str) -> str:
   "marcas_principales_colombia": [ ... ],
   "programas_sociales": { "fundacion", "año_creacion_fundacion", ... },
   "sostenibilidad":     { "meta_empaques", "reconocimientos", ... },
-  "preguntas_frecuentes": [ { "pregunta", "respuesta" } ]  // 10 FAQs
+  "preguntas_frecuentes": [ { "pregunta", "respuesta" } ]
 }
 ```
 
@@ -430,7 +455,7 @@ Respuesta: Colgate-Palmolive llegó a Colombia en 1943, estableciéndose en Cart
 
 Se diseñaron 5 pruebas que cubren todos los casos de uso requeridos. Los resultados a continuación son salidas reales del sistema en producción, verificadas durante la fase de validación.
 
-> **Razonamiento visible en la interfaz:** el ciclo Thought → Action → Observation de cada prueba es directamente observable en la aplicación desplegando el expander **"🧠 Ver razonamiento del agente"** que aparece bajo cada respuesta. Muestra la herramienta seleccionada y el extracto del contexto recuperado, permitiendo auditar en tiempo real la decisión del router ReAct.
+> **Razonamiento visible en la interfaz:** el ciclo Thought → Action → Observation de cada prueba es directamente observable en la aplicación desplegando el expander **"🧠 Ver razonamiento del agente"** que aparece bajo cada respuesta.
 
 > **Nota sobre fuentes:** Los datos históricos "1943 (Cartagena)" y "1952 (Cali)" que aparecen en las respuestas están respaldados por la knowledge base, extraídos de `larepublica_80años` (La República), `historia_colombia` (Valora Analitik) y `operacion_cali` (El País Cali).
 
@@ -497,7 +522,7 @@ Thought: "¿Y cuándo llegaron?" es una referencia al tema anterior
 **Respuesta real del sistema:**
 > Colgate-Palmolive llegó a Colombia en **1943**, cuando comenzó a exportar sus productos a empresas locales desde Cartagena. Posteriormente, en **1952**, abrió su primera planta de producción en Cali, una decisión estratégica debido a la cercanía con el puerto de Buenaventura.
 
-✅ **Resultado:** El agente resuelve la referencia anafórica ("llegaron") usando el historial de la conversación gestionado automáticamente por `MemorySaver`, sin invocar ninguna herramienta adicional.
+✅ **Resultado:** El agente resuelve la referencia anafórica ("llegaron") usando el historial de la conversación gestionado automáticamente por `PostgresSaver`, sin invocar ninguna herramienta adicional. El historial persiste incluso si el usuario recarga el navegador.
 
 ---
 
@@ -537,7 +562,7 @@ Thought: Tengo información de ambas herramientas. Combino en una respuesta.
 >
 > **Breve historia en Colombia:** Colgate-Palmolive llegó a Colombia en 1943, comenzando con exportaciones desde Cartagena. En 1952, abrió su primera planta en Cali por su cercanía al puerto de Buenaventura. En 1977 creó la Fundación Colgate-Palmolive, enfocada en proyectos sociales para la niñez. En los últimos 10 años ha invertido US$140 millones en modernizar su planta de Cali, que hoy exporta a Ecuador, Perú, Bolivia y Venezuela.
 
-✅ **Resultado destacado:** El agente invoca dos herramientas distintas en un único turno y combina ambos resultados en una respuesta coherente y bien estructurada. Este comportamiento demuestra la madurez del enrutamiento ReAct.
+✅ **Resultado destacado:** El agente invoca dos herramientas distintas en un único turno y combina ambos resultados en una respuesta coherente y bien estructurada.
 
 ---
 
@@ -547,7 +572,7 @@ Thought: Tengo información de ambas herramientas. Combino en una respuesta.
 |--------|------|----------------|-----------|
 | 1 | RAG narrativo | `base_documental` | ✅ |
 | 2 | Dato estructurado | `datos_estructurados` | ✅ |
-| 3 | Memoria / seguimiento | Ninguna (historial) | ✅ |
+| 3 | Memoria / seguimiento | Ninguna (historial PostgreSQL) | ✅ |
 | 4 | Enrutamiento mixto | Variable por turno | ✅ 5/5 |
 | 5 | Consulta combinada | `datos_estructurados` + `base_documental` | ✅ |
 
@@ -556,8 +581,9 @@ Thought: Tengo información de ambas herramientas. Combino en una respuesta.
 ## 12. Instalación y uso
 
 ### Requisitos
-- Python 3.11+
+- Python 3.12
 - UV
+- Docker Desktop
 - Cuenta en Mistral AI (gratuita)
 
 ### Instalación
@@ -574,6 +600,7 @@ Cree un archivo `.env` en la raíz del proyecto:
 
 ```
 MISTRAL_API_KEY=su_key_aquí
+POSTGRES_URI=postgresql://postgres:postgres@localhost:5432/colgate?sslmode=disable
 TRANSFORMERS_VERBOSITY=error   # suprime warnings de transformers >= 4.51
 # HF_TOKEN=hf_xxxx            # opcional — el modelo de embeddings es público
 ```
@@ -581,6 +608,17 @@ TRANSFORMERS_VERBOSITY=error   # suprime warnings de transformers >= 4.51
 ### Uso
 
 ```bash
+# 0. Levantar PostgreSQL en Docker (memoria persistente)
+docker start colgate-memory
+
+# Si es la primera vez (descarga la imagen y crea el contenedor):
+docker run --name colgate-memory \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=colgate \
+  -p 5432:5432 \
+  -d postgres:16
+
 # 1. (Solo primera vez) Construir el vectorstore FAISS
 uv run python build_vectorstore.py
 
@@ -596,6 +634,8 @@ uv run python agent.py
 
 La aplicación Streamlit estará disponible en `http://localhost:8501`
 
+> ⚠️ **Importante para la demo:** Docker Desktop debe estar corriendo antes de lanzar la app. Verificar con `docker ps` que el contenedor `colgate-memory` aparece con status `Up`.
+
 ---
 
 ## 13. Estructura del repositorio
@@ -604,7 +644,7 @@ La aplicación Streamlit estará disponible en `http://localhost:8501`
 colgate/
 │
 ├── app_v2.py                # Interfaz Streamlit — Módulo 2 (activa)
-├── agent.py                 # Agente LangGraph ReAct con memoria
+├── agent.py                 # Agente LangGraph ReAct con memoria PostgreSQL
 ├── tools.py                 # Herramientas: RAG + datos estructurados
 ├── prompts.py               # System prompt del agente
 ├── build_vectorstore.py     # Construcción del índice FAISS
@@ -637,15 +677,23 @@ colgate/
 └── .env                     # API keys (no incluido en repositorio)
 ```
 
+**Infraestructura externa:**
+```
+Docker
+└── colgate-memory (postgres:16)
+    └── Puerto 5432 → historial de conversaciones por thread_id
+```
+
 ---
 
 ## 14. Limitaciones del Módulo 2
 
-1. **Memoria volátil**: `MemorySaver` guarda el estado en RAM; un reinicio del servidor borra todas las conversaciones activas.
-2. **Keyword matching limitado**: `datos_estructurados` detecta intención por palabras clave; preguntas muy paráfraseadas pueden no clasificarse correctamente.
-3. **Carga inicial lenta**: la primera visita al browser tarda ~5-10 s mientras se carga el modelo de embeddings en memoria; las visitas siguientes son instantáneas. Un spinner informa al usuario durante esta espera.
-4. **Dependencia de API externa**: requiere conexión a internet y key válida de Mistral AI.
-5. **Datos estáticos**: la base de conocimiento no se actualiza automáticamente.
+1. **Dependencia de Docker**: el contenedor PostgreSQL debe estar activo antes de lanzar la app. Si Docker no está corriendo, el agente no puede iniciar. Solución: `docker start colgate-memory`.
+2. **Persistencia local al navegador**: el `thread_id` se guarda en una cookie del navegador. Un usuario que cambie de dispositivo o borre las cookies inicia una conversación nueva.
+3. **Keyword matching limitado**: `datos_estructurados` detecta intención por palabras clave; preguntas muy parafraseadas pueden no clasificarse correctamente.
+4. **Carga inicial lenta**: la primera visita al browser tarda ~5-10 s mientras se carga el modelo de embeddings en memoria; las visitas siguientes son instantáneas.
+5. **Dependencia de API externa**: requiere conexión a internet y key válida de Mistral AI.
+6. **Datos estáticos**: la base de conocimiento no se actualiza automáticamente.
 
 ---
 

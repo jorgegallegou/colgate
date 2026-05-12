@@ -1,6 +1,6 @@
 # PROJECT.md — Diagnóstico del Asistente Virtual Colgate-Palmolive
 
-> Fecha: 2026-05-09  
+> Fecha: 2026-05-11  
 > Repositorio: `D:\tecnicas_IA\colgate`  
 > App activa: `app_v2.py` (Streamlit) — `app.py` (Gradio, versión anterior)
 
@@ -8,7 +8,7 @@
 
 ## Resumen ejecutivo
 
-El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramientas). Todos los issues de interfaz, código y comportamiento del agente detectados durante las sesiones de desarrollo han sido corregidos. El sistema supera las 4 pruebas de validación requeridas por el taller.
+El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramientas). Todos los issues de interfaz, código y comportamiento del agente detectados durante las sesiones de desarrollo han sido corregidos. El sistema supera las 4 pruebas de validación requeridas por el taller. La memoria conversacional es ahora persistente en disco mediante PostgreSQL corriendo en Docker, sobreviviendo reinicios del servidor y recargas del navegador.
 
 ---
 
@@ -25,11 +25,12 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | UI-05 | Media | ✅ Corregido | **ID de sesión expuesto**: UUID truncado sin utilidad para el usuario. → Eliminado. |
 | UI-06 | Media | ✅ Corregido | **Sin avatar personalizado**: los avatares de `st.chat_message` usaban los genéricos de Streamlit. → Logo corporativo (`assets/logo.png`) como avatar del asistente; emoji `👤` para el usuario. CSS actualizado para cubrir el selector `stChatMessageAvatarImage`. |
 | UI-07 | Baja | ✅ Corregido | **Descripción de herramientas plana**: el sidebar no orientaba al usuario sobre qué preguntar. → Reemplazado por lista de temas consultables. |
+| UI-08 | Alta | ✅ Corregido | **Razonamiento ReAct no visible en UI**: los pasos Thought/Action/Observation ocurrían internamente sin visibilidad. → Nueva función `preguntar_con_pasos()` en `agent.py` (con `_extraer_pasos()`) devuelve los pasos del turno actual; `app_v2.py` los muestra en `st.expander("🧠 Ver razonamiento del agente")`. |
+| UI-09 | Media | ✅ Corregido | **Pantalla en blanco durante la primera carga**: la primera visita al browser mostraba pantalla vacía ~10 s mientras el modelo de embeddings cargaba, sin feedback al usuario. → Import de `agent` movido a `@st.cache_resource` con carga lazy; spinner visible durante la espera. |
+| **UI-10** | **Alta** | ✅ Corregido | **`thread_id` volátil entre recargas**: `st.session_state` se resetea al recargar el navegador, generando un `thread_id` nuevo y perdiendo el historial de la sesión. → `thread_id` guardado en cookie del navegador con duración de 30 días (`max-age=2592000`). Al recargar, la app lee la cookie y recupera el historial desde PostgreSQL. |
 | BUG-01 | Media | ✅ Corregido | **Detección de error frágil**: matching de strings sobre el mensaje de excepción. → Reemplazado por centinelas tipados (`ERROR_GENERICO`, `ERROR_RATE_LIMIT`). |
 | BUG-02 | Baja | ✅ Corregido | **Línea en blanco con espacios en línea 1**: causaba warnings en linters. → Eliminada en reescritura del archivo. |
-| **BUG-NEW-02** | **Alta** | ✅ Corregido | **Respuestas acumuladas por estado corrupto en MemorySaver**: cuando `agente.invoke()` fallaba a mitad de ejecución, LangGraph persistía el mensaje del usuario en el checkpointer sin respuesta del asistente. En el siguiente turno exitoso, el agente veía todos los mensajes acumulados sin responder y los contestaba juntos, generando alucinaciones. → Al detectar un error, `app_v2.py` resetea `thread_id` inmediatamente, abandonando el estado corrupto antes del siguiente turno. |
-| **UI-08** | **Alta** | ✅ Corregido | **Razonamiento ReAct no visible en UI**: los pasos Thought/Action/Observation ocurrían internamente sin visibilidad. → Nueva función `preguntar_con_pasos()` en `agent.py` (con `_extraer_pasos()`) devuelve los pasos del turno actual; `app_v2.py` los muestra en `st.expander("🧠 Ver razonamiento del agente")` con herramienta seleccionada y extracto del contexto recuperado. |
-| **UI-09** | **Media** | ✅ Corregido | **Pantalla en blanco durante la primera carga**: la primera visita al browser mostraba pantalla vacía ~10 s mientras el modelo de embeddings cargaba, sin feedback al usuario. → Import de `agent` movido a `@st.cache_resource` con carga lazy; spinner "⚙️ Iniciando el asistente virtual, un momento..." visible durante la espera. Constantes y `nueva_sesion()` definidas localmente en `app_v2.py` para no bloquear el arranque. |
+| BUG-NEW-02 | Alta | ✅ Corregido | **Respuestas acumuladas por estado corrupto en MemorySaver**: cuando `agente.invoke()` fallaba a mitad de ejecución, LangGraph persistía el mensaje del usuario en el checkpointer sin respuesta del asistente. → Al detectar un error, `app_v2.py` resetea `thread_id` inmediatamente. |
 
 ---
 
@@ -37,8 +38,8 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
-| CFG-01 | Alta | ✅ Corregido | **Sin sección `[theme]`**: Streamlit usaba el tema gris por defecto. → Agregada sección `[theme]` con `primaryColor = "#E31837"`, `backgroundColor`, `secondaryBackgroundColor` y `textColor`. |
-| CFG-02 | Baja | ✅ Corregido | `fastRerenderEnabled` era una opción eliminada en versiones recientes de Streamlit y causaba un warning de config inválida al arrancar. → Opción eliminada. |
+| CFG-01 | Alta | ✅ Corregido | **Sin sección `[theme]`**: Streamlit usaba el tema gris por defecto. → Agregada sección `[theme]` con `primaryColor = "#E31837"`. |
+| CFG-02 | Baja | ✅ Corregido | `fastRerenderEnabled` era una opción eliminada en versiones recientes de Streamlit. → Opción eliminada. |
 
 ---
 
@@ -47,8 +48,10 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
 | AGT-01 | Media | ✅ Corregido | **`SYSTEM_PROMPT` duplicado**: `agent.py` lo definía inline ignorando `prompts.py`. → Ahora importa `SYSTEM_PROMPT` desde `prompts.py`. |
-| AGT-02 | Baja | ✅ Corregido | **Excepción técnica expuesta al usuario**: `str(e)` podía filtrar API keys o stack traces. → Errores logueados con `logging.error(..., exc_info=True)`; función retorna centinelas tipados en lugar de strings de error. |
-| AGT-03 | Baja | ✅ Corregido | **Sin docstrings en funciones**: `preguntar()`, `nueva_sesion()` y helpers internos carecían de documentación. → Docstrings añadidos a todas las funciones públicas y privadas (`_extraer_pasos`, `preguntar_con_pasos`). |
+| AGT-02 | Baja | ✅ Corregido | **Excepción técnica expuesta al usuario**: `str(e)` podía filtrar API keys o stack traces. → Errores logueados con `logging.error(..., exc_info=True)`; función retorna centinelas tipados. |
+| AGT-03 | Baja | ✅ Corregido | **Sin docstrings en funciones**. → Docstrings añadidos a todas las funciones públicas y privadas. |
+| **AGT-04** | **Alta** | ✅ Corregido | **Memoria volátil con `MemorySaver`**: el historial se guardaba en RAM y se perdía al reiniciar la app. → Reemplazado por `PostgresSaver` de `langgraph-checkpoint-postgres`, conectado a PostgreSQL vía `psycopg`. El historial persiste en disco y sobrevive reinicios completos del servidor. `checkpointer.setup()` crea las tablas automáticamente en la primera ejecución. |
+| **AGT-05** | **Media** | ✅ Corregido | **Import duplicado de `os`**: aparecía en línea 3 y línea 6. → Eliminado el duplicado. |
 
 ---
 
@@ -56,10 +59,10 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
-| PRM-01 | Alta | ✅ Corregido | **Código muerto**: `AGENT_PROMPT_TEMPLATE` y `AGENT_PROMPT` (PromptTemplate) nunca se importaban. → Archivo refactorizado: exporta solo `SYSTEM_PROMPT` como string puro compatible con LangGraph. |
-| PRM-02 | Media | ✅ Corregido | **Variables incompatibles con LangGraph**: `{history}`, `{tools}`, `{agent_scratchpad}` son del patrón `initialize_agent` clásico. → Eliminadas; LangGraph gestiona el historial y el scratchpad internamente. |
-| **BUG-NEW-03** | **Alta** | ✅ Corregido | **Agente reportaba "no hay información" sobre sostenibilidad**: el agente usaba solo `base_documental` (RAG) y, al no recuperar chunks relevantes de sostenibilidad ambiental, concluía que no existía información — ignorando que `datos_estructurados.json` sí contiene esos datos. → Agregada instrucción de fallback: "Si la primera herramienta no devuelve información suficiente, prueba con la otra antes de concluir que no hay información." |
-| **PRM-03** | **Media** | ✅ Corregido | **Criterio de selección ambiguo**: `sostenibilidad` y `programas sociales` aparecían listados como categorías de `datos_estructurados` en una sección y omitidos del criterio de selección en otra, causando enrutamiento inconsistente. → Criterio reescrito basado en el **tipo de respuesta esperada** (dato puntual vs. explicación narrativa), eliminando listas de categorías por tema. Añadido segundo ejemplo de razonamiento ReAct para preguntas de seguimiento con memoria. |
+| PRM-01 | Alta | ✅ Corregido | **Código muerto**: `AGENT_PROMPT_TEMPLATE` y `AGENT_PROMPT` nunca se importaban. → Archivo refactorizado: exporta solo `SYSTEM_PROMPT`. |
+| PRM-02 | Media | ✅ Corregido | **Variables incompatibles con LangGraph**: `{history}`, `{tools}`, `{agent_scratchpad}`. → Eliminadas. |
+| BUG-NEW-03 | Alta | ✅ Corregido | **Agente reportaba "no hay información" sobre sostenibilidad**. → Agregada instrucción de fallback entre herramientas. |
+| PRM-03 | Media | ✅ Corregido | **Criterio de selección ambiguo**. → Criterio reescrito basado en tipo de respuesta esperada. |
 
 ---
 
@@ -67,12 +70,12 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
-| TLS-01 | Media | ✅ Corregido | **Matching de palabras clave frágil**: listas hardcodeadas con variantes acentuadas y sin acentuar duplicadas. → Función `_normalizar()` con `unicodedata` elimina tildes antes del matching; listas depuradas y ampliadas. |
-| TLS-02 | Baja | ✅ Corregido | **Keyword matching devolvía categoría equivocada**: el scoring de FAQs usaba solapamiento de palabras sin filtrar stopwords, haciendo que preguntas de horario devolvieran la FAQ de teléfono. → Las categorías con palabras clave específicas se evalúan primero; las FAQs actúan como fallback con stopwords filtradas y score mínimo >= 2. |
+| TLS-01 | Media | ✅ Corregido | **Matching de palabras clave frágil**. → Función `_normalizar()` con `unicodedata`. |
+| TLS-02 | Baja | ✅ Corregido | **Keyword matching devolvía categoría equivocada**. → Categorías específicas con prioridad sobre FAQs. |
 | TLS-03 | Baja | Pendiente | **`_cache` fallback silencioso** en ejecución CLI sin Streamlit. |
-| TLS-04 | Baja | ✅ Corregido | **Sin docstrings**: `_cargar_recursos()`, `buscar_en_base_documental()` y `buscar_en_datos_estructurados()` carecían de documentación inline. → Docstrings añadidos a las tres funciones. |
-| TLS-05 | Media | ✅ Corregido | **~400 warnings `[transformers] Accessing __path__`**: `transformers >= 4.51` emite un aviso por cada módulo de procesamiento de imagen al cargar el modelo de embeddings, saturando el log con ~400 líneas de ruido. → Doble supresión: `warnings.filterwarnings("ignore", message=".*Accessing.*__path__.*")` para llamadas vía `warnings.warn`, y `logging.getLogger("transformers").setLevel(logging.ERROR)` para el sistema de logging. Añadido también `TRANSFORMERS_VERBOSITY=error` en `.env` como guardia adicional. |
-| **BUG-NEW-01** | **Alta** | ✅ Corregido | **`UnicodeEncodeError` en consola Windows**: los `print()` con emojis (`🔧`, `✓`) dentro de `_cargar_recursos()` causaban crash al iniciar la app (codificación cp1252). La excepción dentro de `@st.cache_resource` impedía cargar el vectorstore y bloqueaba el arranque completo. → Emojis eliminados de los `print()`. |
+| TLS-04 | Baja | ✅ Corregido | **Sin docstrings**. → Docstrings añadidos. |
+| TLS-05 | Media | ✅ Corregido | **~400 warnings `[transformers] Accessing __path__`**. → Doble supresión con `warnings.filterwarnings` y `logging.setLevel`. |
+| BUG-NEW-01 | Alta | ✅ Corregido | **`UnicodeEncodeError` en consola Windows**: emojis en `print()` causaban crash en cp1252. → Emojis eliminados de los `print()`. |
 
 ---
 
@@ -80,8 +83,10 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
-| DEP-01 | Media | Pendiente | **Dependencias de scraping en el mismo grupo que la app**: `gradio`, `selenium`, `trafilatura`, `webdriver-manager`, `yt-dlp` no las usa `app_v2.py` pero sí los scrapers. Se mantienen para no romper el flujo de reconstrucción del knowledge base. |
-| DEP-02 | Baja | ✅ Corregido | `requires-python = ">=3.14"` demasiado restrictivo. → Corregido a `>=3.11`. |
+| DEP-01 | Media | Pendiente | **Dependencias de scraping mezcladas con la app**. Se mantienen para no romper el flujo de reconstrucción del knowledge base. |
+| DEP-02 | Baja | ✅ Corregido | `requires-python = ">=3.14"` demasiado restrictivo. → Corregido a `>=3.12`. |
+| **DEP-03** | **Alta** | ✅ Corregido | **Python 3.14 incompatible con `torch`**: `torch` no tiene soporte estable para Python 3.14, causando `KeyboardInterrupt` al cargar el modelo de embeddings HuggingFace. → Entorno virtual recreado con Python 3.12 (`uv venv --python 3.12` + `uv sync`). |
+| **DEP-04** | **Alta** | ✅ Corregido | **Sin dependencias de persistencia**: el proyecto no tenía soporte para checkpointer en base de datos. → Agregados `langgraph-checkpoint-postgres==3.0.5`, `psycopg==3.3.4`, `psycopg-pool==3.3.1` y `psycopg-binary==3.3.4` via `uv add`. |
 
 ---
 
@@ -89,13 +94,23 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 
 | # | Severidad | Estado | Problema |
 |---|-----------|--------|----------|
-| DOC-01 | Media | ✅ Corregido | **Diagrama de arquitectura en ASCII**: el diagrama de flujo era un bloque de arte ASCII que GitHub mostraba como texto plano sin estructura visual. → Reemplazado por un diagrama `flowchart TD` en Mermaid, que GitHub renderiza automáticamente como imagen interactiva. |
-| DOC-02 | Baja | ✅ Corregido | **Razonamiento del agente documentado solo en README**: las pruebas mostraban el ciclo ReAct como texto estático. → Ahora el razonamiento es visible en tiempo real en la UI (UI-08); actualizado el aviso en la sección de pruebas del README. |
-| DOC-03 | Baja | ✅ Corregido | **Meta-prompt desactualizado en sección 10.3**: el snippet del criterio de selección reflejaba la versión anterior del prompt (listas por tema). → Actualizado al criterio actual basado en tipo de respuesta esperada, incluyendo el segundo ejemplo de razonamiento con memoria. `clean_knowledge_base.py` agregado a la estructura del repositorio. |
+| DOC-01 | Media | ✅ Corregido | **Diagrama de arquitectura en ASCII**. → Reemplazado por diagrama Mermaid. |
+| DOC-02 | Baja | ✅ Corregido | **Razonamiento del agente documentado solo en README**. → Ahora visible en tiempo real en la UI. |
+| DOC-03 | Baja | ✅ Corregido | **Meta-prompt desactualizado en sección 10.3**. → Actualizado al criterio actual. |
+| **DOC-04** | **Alta** | ✅ Corregido | **README no reflejaba arquitectura de persistencia**: sección 8.2, 9, 12, 13 y 14 describían `MemorySaver` y memoria volátil. → Actualizadas para reflejar `PostgresSaver`, Docker, cookie del `thread_id`, nueva variable `POSTGRES_URI` en `.env`, comando de arranque de Docker y limitaciones reales. |
 
 ---
 
-### 8. `app.py` vs `app_v2.py` — Regresión visual (resuelta)
+### 8. Infraestructura — Docker + PostgreSQL
+
+| # | Severidad | Estado | Problema / Decisión |
+|---|-----------|--------|----------|
+| **INF-01** | **Alta** | ✅ Implementado | **Memoria volátil requería solución de persistencia**: el profesor confirmó que se requiere persistencia real en disco. → PostgreSQL `postgres:16` desplegado en Docker con contenedor `colgate-memory` (puerto 5432). URI de conexión en `.env` como `POSTGRES_URI`. `PostgresSaver.setup()` crea las tablas automáticamente. Verificado que el historial sobrevive reinicios completos de la app. |
+| **INF-02** | **Media** | ✅ Documentado | **Docker no arranca automáticamente con Windows**: el contenedor debe levantarse manualmente antes de lanzar la app. → Documentado en README sección 12 con comando `docker start colgate-memory` y advertencia para la demo. |
+
+---
+
+### 9. `app.py` vs `app_v2.py` — Regresión visual (resuelta)
 
 La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipografía Sora y FAQ con tarjetas. `app_v2.py` eliminó todo eso al migrar a Streamlit. Resuelto en commit `d7df437` con branding completo y CSS corporativo.
 
@@ -105,8 +120,9 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
-| *(pendiente)* | docs: actualizar README sección 10.3 y registrar PRM-03 en PROJECT.md (DOC-03) |
-| *(pendiente)* | fix/feat: suprimir warnings transformers `__path__` (TLS-05) y spinner de carga inicial (UI-09) |
+| *(pendiente)* | feat: persistencia de memoria con PostgresSaver en Docker |
+| *(pendiente)* | fix: recrear entorno virtual con Python 3.12 — torch incompatible con 3.14 |
+| *(pendiente)* | docs: actualizar README y PROJECT.md con arquitectura de persistencia |
 | `c0bc12a` | fix: corregir TLS-02 — keyword matching tiene prioridad sobre FAQ scoring |
 | `6add79b` | feat: docstrings, razonamiento ReAct en UI y diagrama Mermaid |
 | `8bd5750` | fix: usar emoji como avatar del asistente en lugar de Path object |
@@ -124,8 +140,9 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | # | Severidad | Descripción |
 |---|-----------|-------------|
-| TLS-03 | Baja | `_cache` fallback silencioso en ejecución CLI |
+| TLS-03 | Baja | `_cache` fallback silencioso en ejecución CLI sin Streamlit |
 | DEP-01 | Media | Evaluar separar dependencias de scraping en grupo opcional de `pyproject.toml` |
+| INF-02 | Media | Docker no arranca automáticamente con Windows — requiere `docker start colgate-memory` manual antes de cada sesión |
 
 ---
 
@@ -133,8 +150,8 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Archivo | Rol |
 |---------|-----|
-| `app_v2.py` | Interfaz Streamlit (activa) |
-| `agent.py` | Agente LangGraph con memoria y centinelas de error |
+| `app_v2.py` | Interfaz Streamlit (activa) — cookie de sesión para persistencia del `thread_id` |
+| `agent.py` | Agente LangGraph con `PostgresSaver` y centinelas de error |
 | `tools.py` | RAG FAISS + datos estructurados con normalización unicode |
 | `prompts.py` | System prompt del agente con criterio de selección por tipo de respuesta |
 | `build_vectorstore.py` | Script de construcción del índice FAISS |
@@ -143,3 +160,13 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 | `data/vectorstore/` | Índice FAISS (137 chunks) |
 | `data/datos_estructurados.json` | Datos de contacto, horarios, sedes, marcas, etc. |
 | `app.py` | Versión anterior con Gradio (referencia de estilo) |
+
+## Infraestructura externa
+
+| Componente | Detalle |
+|-----------|---------|
+| Docker Desktop | Requerido antes de lanzar la app |
+| Contenedor | `colgate-memory` — `postgres:16` — puerto 5432 |
+| Base de datos | `colgate` — usuario `postgres` |
+| Arranque | `docker start colgate-memory` |
+| Primera vez | `docker run --name colgate-memory -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=colgate -p 5432:5432 -d postgres:16` |
