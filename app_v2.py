@@ -139,10 +139,12 @@ with st.sidebar:
         st.session_state.thread_id = nuevo_id
         st.session_state.mensajes = []
         st.components.v1.html(
-            f"<script>document.cookie='thread_id={nuevo_id};path=/;max-age=2592000'</script>",
+            f"""<script>
+            document.cookie='thread_id={nuevo_id};path=/;max-age=2592000';
+            window.location.reload();
+            </script>""",
             height=0,
         )
-        st.rerun()
 
 # ── Cabecera ───────────────────────────────────────────────────────────────────
 st.title("Asistente Virtual Colgate-Palmolive")
