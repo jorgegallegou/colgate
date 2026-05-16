@@ -263,7 +263,8 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 
 ### 8.1 Diagrama de flujo
 
-![Arquitectura del agente](assets/diagrama_arquitectura.png)
+![Arquitectura del agente](assets/Diagrama 1.png)
+![Arquitectura del agente](assets/Diagrama 2.png)
 
 ### 8.2 Comparación Módulo 1 vs Módulo 2
 
