@@ -71,10 +71,12 @@ El script `chunking.py` realiza las siguientes operaciones:
 
 | Fuente | Chunks | Orden de carga |
 |---|---|---|
-| Wikipedia | 27 | 1° (más rica en contexto histórico) |
-| Páginas web | 87 | 2° |
-| YouTube | 23 | 3° |
-| **Total** | **137** | — |
+| Wikipedia ES | 72 | 1° (más rica en contexto histórico) |
+| Páginas web | 163 | 2° |
+| YouTube | — | Descartado |
+| **Total** | **235** | — |
+
+> **Decisión de diseño:** El scraper de YouTube fue descartado del vectorstore final. Las transcripciones automáticas aportaban contenido poco estructurado con alta densidad de ruido, lo que reducía la precisión del RAG. El vectorstore final se construye con fuentes textuales de alta calidad: sitio web oficial (163 chunks) y Wikipedia ES (72 chunks).
 
 El archivo `knowledge_base.txt` resultante tiene 122.013 caracteres. Para el prompt de sistema se cargan los primeros 80.000 caracteres, priorizando Wikipedia por su riqueza informativa.
 
@@ -261,7 +263,7 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 
 ### 8.1 Diagrama de flujo
 
-![Arquitectura del agente](assets/diagrama_arquitectura.svg)
+![Arquitectura del agente](assets/diagrama_arquitectura.png)
 
 ### 8.2 Comparación Módulo 1 vs Módulo 2
 
@@ -362,9 +364,9 @@ El profesor menciona `ConversationBufferMemory` (LangChain clásico) como refere
 **Implementación:**
 - Motor: FAISS (Facebook AI Similarity Search)
 - Embeddings: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
-- Índice: 137 chunks de 600 caracteres con solapamiento de 100
+- Índice: 235 chunks de 1.500 caracteres con solapamiento de 100
 - Recuperación: top-4 chunks por similitud coseno
-- Fuentes: Wikipedia, sitio web oficial, canal YouTube corporativo
+- Fuentes: sitio web oficial (163 chunks), Wikipedia ES (72 chunks)
 
 ```python
 def buscar_en_base_documental(pregunta: str) -> str:
@@ -604,16 +606,14 @@ uv sync
 Cree un archivo `.env` en la raíz del proyecto:
 
 ```
-MISTRAL_API_KEY=<su_key_de_mistral>
-POSTGRES_USER=<usuario_postgresql>
-POSTGRES_PASSWORD=<contraseña_postgresql>
-POSTGRES_DB=<nombre_base_de_datos>
-POSTGRES_URI=postgresql://<usuario_postgresql>:<contraseña_postgresql>@localhost:5432/<nombre_base_de_datos>?sslmode=disable
+MISTRAL_API_KEY=su_key_aquí
+POSTGRES_USER=colgate
+POSTGRES_DB=colgate_db
+POSTGRES_PASSWORD=su_password_aquí
+POSTGRES_URI=postgresql://colgate:su_password_aquí@localhost:5432/colgate_db
 TRANSFORMERS_VERBOSITY=error   # suprime warnings de transformers >= 4.51
-# HF_TOKEN=<su_token_de_huggingface>   # opcional — el modelo de embeddings es público
+# HF_TOKEN=hf_xxxx            # opcional — el modelo de embeddings es público
 ```
-
-> `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB` son leídas por `docker-compose.yml` para crear el contenedor. `POSTGRES_URI` es leída por `agent.py` para conectarse. Deben ser consistentes entre sí.
 
 ### Uso
 

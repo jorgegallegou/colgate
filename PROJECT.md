@@ -97,6 +97,7 @@ El proyecto tiene un backend funcional (agente LangGraph + RAG FAISS + herramien
 | DOC-01 | Media | ✅ Corregido | **Diagrama de arquitectura en ASCII**. → Reemplazado por diagrama Mermaid. |
 | DOC-02 | Baja | ✅ Corregido | **Razonamiento del agente documentado solo en README**. → Ahora visible en tiempo real en la UI. |
 | DOC-03 | Baja | ✅ Corregido | **Meta-prompt desactualizado en sección 10.3**. → Actualizado al criterio actual. |
+| **DOC-05** | **Media** | ✅ Corregido | **Conteo de chunks desactualizado**: README decía 137 chunks y fuentes incorrectas. → Actualizado a 235 chunks (web 163 + Wikipedia ES 72). YouTube descartado del vectorstore por aportar contenido poco estructurado. Decisión documentada como nota de diseño. |
 | **DOC-04** | **Alta** | ✅ Corregido | **README no reflejaba arquitectura de persistencia**: sección 8.2, 9, 12, 13 y 14 describían `MemorySaver` y memoria volátil. → Actualizadas para reflejar `PostgresSaver`, Docker, cookie del `thread_id`, nueva variable `POSTGRES_URI` en `.env`, comando de arranque de Docker y limitaciones reales. |
 
 ---
@@ -120,6 +121,10 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 
 | Commit | Descripción |
 |--------|-------------|
+| `(pendiente)` | docs: actualizar chunks a 235, descartar YouTube del vectorstore |
+| `(pendiente)` | fix: actualizar cookie al iniciar nueva conversación |
+| `(pendiente)` | refactor: separar dependencias de scraping en grupos opcionales |
+| `(pendiente)` | fix: eliminar credenciales reales de README y PROJECT.md |
 | `ba1d198` | feat: persistencia de memoria con PostgresSaver en Docker + Python 3.12 + docs actualizados |
 | `aee66f5` | fix: revertir escape de asteriscos, mantener solo escape de signo dolar |
 | `7bc6afd` | fix: escapar caracteres Markdown en respuestas para evitar renderizado incorrecto |
@@ -156,7 +161,7 @@ La versión `app.py` (Gradio) tenía logo, sidebar con CSS corporativo, tipograf
 | `build_vectorstore.py` | Script de construcción del índice FAISS |
 | `clean_knowledge_base.py` | Limpieza y re-chunking de knowledge_base.txt para FAISS |
 | `.streamlit/config.toml` | Tema corporativo Streamlit |
-| `data/vectorstore/` | Índice FAISS (137 chunks) |
+| `data/vectorstore/` | Índice FAISS (235 chunks — web 163 + Wikipedia ES 72) |
 | `data/datos_estructurados.json` | Datos de contacto, horarios, sedes, marcas, etc. |
 | `app.py` | Versión anterior con Gradio (referencia de estilo) |
 
