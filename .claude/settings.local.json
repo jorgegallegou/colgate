@@ -42,7 +42,12 @@
       "PowerShell(Get-ChildItem *)",
       "PowerShell(git rm *)",
       "PowerShell(git add *)",
-      "PowerShell(git push *)"
+      "PowerShell(git push *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\tecnicas_IA\\\\colgate\" -Recurse -Force)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(grep -E '\\\\.\\(py|toml|env|json|yaml|yml|txt|md\\)$')",
+      "Bash(python *)"
     ]
   }
 }
