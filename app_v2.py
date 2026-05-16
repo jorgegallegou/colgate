@@ -135,9 +135,14 @@ with st.sidebar:
     st.divider()
 
     if st.button("Nueva conversación", use_container_width=True):
-        st.session_state.thread_id = nueva_sesion()
-        st.session_state.mensajes = []
-        st.rerun()
+    nuevo_id = nueva_sesion()
+    st.session_state.thread_id = nuevo_id
+    st.session_state.mensajes = []
+    st.components.v1.html(
+        f"<script>document.cookie='thread_id={nuevo_id};path=/;max-age=2592000'</script>",
+        height=0,
+    )
+    st.rerun()
 
 # ── Cabecera ───────────────────────────────────────────────────────────────────
 st.title("Asistente Virtual Colgate-Palmolive")
