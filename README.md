@@ -267,6 +267,8 @@ Al intentar subir el repositorio, GitHub bloqueó el push porque detectó la API
 
 ![Arquitectura del agente](assets/diagrama_2.png)
 
+![Arquitectura del agente](assets/diagrama_3.png)
+
 ### 8.2 Comparación Módulo 1 vs Módulo 2
 
 | Aspecto | Módulo 1 | Módulo 2 |
