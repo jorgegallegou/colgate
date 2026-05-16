@@ -288,25 +288,42 @@ Se utilizó `PostgresSaver` de LangGraph como checkpointer del agente. A diferen
 Cada sesión de usuario recibe un `thread_id` único (UUID v4) que se guarda en una cookie del navegador con duración de 30 días. Al recargar la página, la app lee la cookie y recupera el historial completo desde PostgreSQL.
 
 ```python
-# agent.py — configuración del checkpointer con PostgreSQL
+# agent.py — configuración del agente con middleware RAG y checkpointer PostgreSQL
+
+# LangGraph V1.0+: create_agent reemplaza a create_react_agent
+from langchain.agents import create_agent
+from langchain.agents.middleware import dynamic_prompt, ModelRequest
 from psycopg_pool import ConnectionPool
 from langgraph.checkpoint.postgres import PostgresSaver
+from config import POSTGRES_URI, POOL_SIZE, RAG_TOP_K
 
-POSTGRES_URI = os.environ.get("POSTGRES_URI")
+# Middleware: inyecta contexto RAG en el system prompt antes de cada llamada al LLM
+@dynamic_prompt
+def _prompt_con_contexto(request: ModelRequest) -> str:
+    last_human = next(
+        (m for m in reversed(request.messages) if isinstance(m, HumanMessage)), None
+    )
+    if last_human:
+        docs = _vectorstore.similarity_search(last_human.content, k=RAG_TOP_K)
+        context = "\n\n".join(doc.page_content for doc in docs)
+        return SYSTEM_PROMPT + f"\n\n### CONTEXTO RECUPERADO ###\n{context}"
+    return SYSTEM_PROMPT
+
 _pool = ConnectionPool(
     POSTGRES_URI,
-    max_size=5,
+    max_size=POOL_SIZE,
     open=True,
     kwargs={"autocommit": True},
 )
 checkpointer = PostgresSaver(_pool)
 checkpointer.setup()  # crea las tablas automáticamente en la primera ejecución
 
-agente = create_react_agent(
-    model=llm,
-    tools=TOOLS,
-    prompt=SYSTEM_PROMPT,
-    checkpointer=checkpointer,   # memoria persistente en PostgreSQL
+agente = create_agent(
+    llm,
+    TOOLS,
+    system_prompt=SYSTEM_PROMPT,
+    middleware=[_prompt_con_contexto],
+    checkpointer=checkpointer,
 )
 
 # En cada invocación se pasa el thread_id
@@ -316,12 +333,15 @@ resultado = agente.invoke({"messages": [...]}, config=config)
 
 ```python
 # app_v2.py — persistencia del thread_id en cookie del navegador
+# COOKIE_MAX_AGE y ERROR_GENERICO/ERROR_RATE_LIMIT se importan desde config.py
+from config import ERROR_GENERICO, ERROR_RATE_LIMIT, COOKIE_MAX_AGE
+
 if "thread_id" not in st.session_state:
     thread_id = st.context.cookies.get("thread_id")
     if not thread_id:
-        thread_id = nueva_sesion()
+        thread_id = _nuevo_thread_id()
         st.components.v1.html(
-            f"<script>document.cookie='thread_id={thread_id};path=/;max-age=2592000'</script>",
+            f"<script>document.cookie='{_cookie_attr(thread_id)}'</script>",
             height=0,
         )
     st.session_state.thread_id = thread_id
@@ -357,21 +377,26 @@ El profesor menciona `ConversationBufferMemory` (LangChain clásico) como refere
 
 ## 10. Diseño de Herramientas
 
-### 10.1 Herramienta 1 — `base_documental` (RAG semántico)
+### 10.1 Herramienta 1 — `retrieve_context` (RAG semántico)
 
 **Justificación:** Las preguntas narrativas sobre historia, valores, sostenibilidad o productos requieren recuperar fragmentos de texto relevantes de múltiples fuentes. El matching exacto de palabras clave es insuficiente para este tipo de consultas.
 
 **Implementación:**
 - Motor: FAISS (Facebook AI Similarity Search)
 - Embeddings: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
-- Índice: 235 chunks de 1.500 caracteres con solapamiento de 100
-- Recuperación: top-4 chunks por similitud coseno
+- Índice: 235 chunks de 1.500 caracteres con solapamiento de 150
+- Recuperación: top-4 chunks por similitud coseno (configurable en `config.RAG_TOP_K`)
 - Fuentes: sitio web oficial (163 chunks), Wikipedia ES (72 chunks)
 
 ```python
-def buscar_en_base_documental(pregunta: str) -> str:
-    resultados = _vectorstore.similarity_search(pregunta, k=4)
-    # Retorna chunks con metadatos de fuente y URL
+@tool(response_format="content_and_artifact")
+def retrieve_context(pregunta: str):
+    retrieved_docs = _vectorstore.similarity_search(pregunta, k=RAG_TOP_K)
+    serialized = "\n\n".join(
+        f"Source: {doc.metadata}\nContent: {doc.page_content}"
+        for doc in retrieved_docs
+    )
+    return serialized, retrieved_docs
 ```
 
 **Tipo de preguntas que resuelve:**
@@ -404,14 +429,20 @@ def buscar_en_base_documental(pregunta: str) -> str:
 import unicodedata
 
 def _normalizar(texto: str) -> str:
-    # Elimina tildes → matching robusto sin importar acentos
+    # Elimina tildes → matching robusto sin importar acentos ni mayúsculas
     return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode().lower()
 
 def buscar_en_datos_estructurados(pregunta: str) -> str:
+    """Función pura (sin @tool) — testeable de forma aislada con pytest."""
     q = _normalizar(pregunta)
-    # 1. Detecta intención por palabras clave normalizadas (prioridad)
+    # 1. Detecta intención por palabras clave normalizadas (mayor prioridad)
     # 2. FAQs como fallback por solapamiento de palabras con stopwords filtradas
     # 3. Retorna datos del JSON correspondiente
+
+@tool
+def datos_estructurados(pregunta: str) -> str:
+    """Wrapper @tool que llama a buscar_en_datos_estructurados()."""
+    return buscar_en_datos_estructurados(pregunta)
 ```
 
 **Tipo de preguntas que resuelve:**
@@ -429,7 +460,7 @@ Usa "datos_estructurados" si la pregunta espera un dato puntual como respuesta:
   un número, una fecha, una dirección, un nombre legal, una lista corta.
   Ejemplos: teléfono, horario, NIT, sede, marca, sitio web, redes sociales.
 
-Usa "base_documental" si la pregunta espera una explicación o contexto:
+Usa "retrieve_context" si la pregunta espera una explicación o contexto:
   historia, valores, cultura, operaciones, estrategia, noticias,
   descripción de productos, programas sociales, sostenibilidad, fundación.
 
@@ -475,8 +506,8 @@ Se diseñaron 5 pruebas que cubren todos los casos de uso requeridos. Los result
 **Razonamiento interno del agente:**
 ```
 Thought: La pregunta es narrativa y requiere contexto histórico.
-         Debo usar "base_documental".
-Action: base_documental
+         Debo usar "retrieve_context".
+Action: retrieve_context
 Action Input: ¿Cuál es la historia de Colgate-Palmolive?
 Observation: [Fuente: Wikipedia | ...] William Colgate fundó la empresa en 1806...
              [Fuente: historia_colombia | valoraanalitik.com] Llegó a Colombia
@@ -487,7 +518,7 @@ Thought: La herramienta devolvió contexto histórico suficiente.
 **Respuesta real del sistema:**
 > La historia de Colgate-Palmolive se remonta a 1806, cuando William Colgate fundó una pequeña fábrica de almidón, jabones y velas en Nueva York. En 1857, tras la muerte de William Colgate, la compañía fue reorganizada como Colgate & Company bajo la dirección de su hijo Samuel Colgate. Con el tiempo, Colgate-Palmolive se expandió globalmente, convirtiéndose en una multinacional presente en más de 200 países...
 
-✅ **Resultado:** El agente selecciona `base_documental`, recupera chunks históricos de múltiples fuentes y construye una respuesta narrativa coherente sin inventar datos.
+✅ **Resultado:** El agente selecciona `retrieve_context`, recupera chunks históricos de múltiples fuentes y construye una respuesta narrativa coherente sin inventar datos.
 
 ---
 
@@ -539,11 +570,11 @@ Sesión completa que combina todos los tipos de consulta:
 
 | Turno | Pregunta | Herramienta | Resultado |
 |-------|----------|-------------|-----------|
-| 1 | "¿Cuál es la historia de Colgate-Palmolive?" | `base_documental` | ✅ Respuesta narrativa rica |
+| 1 | "¿Cuál es la historia de Colgate-Palmolive?" | `retrieve_context` | ✅ Respuesta narrativa rica |
 | 2 | "¿Y cuándo llegaron exactamente?" | Ninguna (memoria) | ✅ Fecha exacta por contexto |
 | 3 | "¿Cuál es el NIT de la empresa?" | `datos_estructurados` | ✅ `890.300.546-6` |
 | 4 | "¿Qué marcas venden en Colombia?" | `datos_estructurados` | ✅ Lista completa (10 marcas) |
-| 5 | "¿Cuéntame más sobre el programa de sostenibilidad?" | `base_documental` + fallback | ✅ Respuesta con inversión, Fundación y compromisos |
+| 5 | "¿Cuéntame más sobre el programa de sostenibilidad?" | `retrieve_context` + fallback | ✅ Respuesta con inversión, Fundación y compromisos |
 
 ✅ **Resultado:** El agente selecciona la herramienta correcta en el 100% de los turnos.
 
@@ -557,10 +588,10 @@ Sesión completa que combina todos los tipos de consulta:
 ```
 Thought: La pregunta tiene dos partes:
          1. "el teléfono" → dato puntual → "datos_estructurados"
-         2. "algo de historia" → narrativa → "base_documental"
+         2. "algo de historia" → narrativa → "retrieve_context"
          Invocaré ambas herramientas.
 Action 1: datos_estructurados → Línea gratuita: 018000520800
-Action 2: base_documental → Historia Colombia: 1943 Cartagena, 1952 Cali...
+Action 2: retrieve_context → Historia Colombia: 1943 Cartagena, 1952 Cali...
 Thought: Tengo información de ambas herramientas. Combino en una respuesta.
 ```
 
@@ -577,11 +608,11 @@ Thought: Tengo información de ambas herramientas. Combino en una respuesta.
 
 | Prueba | Tipo | Herramienta(s) | Resultado |
 |--------|------|----------------|-----------|
-| 1 | RAG narrativo | `base_documental` | ✅ |
+| 1 | RAG narrativo | `retrieve_context` | ✅ |
 | 2 | Dato estructurado | `datos_estructurados` | ✅ |
 | 3 | Memoria / seguimiento | Ninguna (historial PostgreSQL) | ✅ |
 | 4 | Enrutamiento mixto | Variable por turno | ✅ 5/5 |
-| 5 | Consulta combinada | `datos_estructurados` + `base_documental` | ✅ |
+| 5 | Consulta combinada | `datos_estructurados` + `retrieve_context` | ✅ |
 
 ---
 
@@ -649,6 +680,7 @@ colgate/
 ├── agent.py                 # Agente LangGraph ReAct con memoria PostgreSQL
 ├── tools.py                 # Herramientas: RAG + datos estructurados
 ├── prompts.py               # System prompt del agente
+├── config.py                # Fuente única de verdad: rutas, constantes, sentinelas
 ├── build_vectorstore.py     # Construcción del índice FAISS
 │
 ├── app.py                   # Interfaz Gradio — Módulo 1 (referencia)

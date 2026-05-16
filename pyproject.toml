@@ -36,3 +36,9 @@ gradio = [
 dev = [
     "pytest>=8.3.5",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

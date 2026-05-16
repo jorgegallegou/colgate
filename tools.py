@@ -3,21 +3,18 @@ import logging
 import os
 import unicodedata
 import warnings
-from pathlib import Path
 
-# Suprime los ~400 avisos de __path__ que emite transformers >= 4.51
-# Doble mecanismo: env var (logging) + filterwarnings (warnings.warn)
 os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
 warnings.filterwarnings("ignore", message=".*Accessing.*__path__.*")
 
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_core.tools import Tool
+from langchain.tools import tool
 
-from config import EMBEDDING_MODEL, VECTORSTORE_PATH, RAG_TOP_K
+from config import EMBEDDING_MODEL, VECTORSTORE_PATH, RAG_TOP_K, STRUCTURED_DATA_PATH
 
-# Por si el logger ya fue inicializado antes de leer el env var
 logging.getLogger("transformers").setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 try:
     import streamlit as st
@@ -26,19 +23,23 @@ except ImportError:
     def _cache(fn):
         return fn
 
-# ── Configuración ──────────────────────────────────────────────────────────────
-STRUCTURED_PATH = Path("data/datos_estructurados.json")
+# ── Utilidades ─────────────────────────────────────────────────────────────────
 
 def _normalizar(texto: str) -> str:
     """Elimina tildes y pasa a minúsculas para matching robusto."""
     return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode().lower()
 
+_STOPWORDS = frozenset({
+    "cual", "es", "el", "la", "de", "en", "un", "una", "los", "las",
+    "del", "al", "y", "o", "que", "con", "por", "su", "se", "cuales",
+})
+
 # ── Carga de recursos con caché de Streamlit ───────────────────────────────────
+
 @_cache
 def _cargar_recursos():
-    """Carga embeddings, vectorstore FAISS y JSON estructurado una sola vez (caché Streamlit)."""
-    print("Cargando herramientas del agente...")
-    logging.getLogger("transformers").setLevel(logging.ERROR)
+    """Carga embeddings, vectorstore FAISS y JSON estructurado una sola vez."""
+    logger.info("Cargando recursos del agente...")
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,
         model_kwargs={"device": "cpu"},
@@ -49,35 +50,50 @@ def _cargar_recursos():
         embeddings,
         allow_dangerous_deserialization=True,
     )
-    datos = json.loads(STRUCTURED_PATH.read_text(encoding="utf-8"))
-    print("Herramientas cargadas")
+    datos = json.loads(STRUCTURED_DATA_PATH.read_text(encoding="utf-8"))
+    logger.info("Recursos cargados: %d vectores en el índice FAISS", vectorstore.index.ntotal)
     return embeddings, vectorstore, datos
+
 
 _embeddings, _vectorstore, _datos_estructurados = _cargar_recursos()
 
-# ── Tool 1: RAG ────────────────────────────────────────────────────────────────
-def buscar_en_base_documental(pregunta: str) -> str:
-    """Recupera los top-K chunks más similares del vectorstore FAISS con sus metadatos de fuente."""
-    resultados = _vectorstore.similarity_search(pregunta, k=RAG_TOP_K)
-    if not resultados:
-        return "No se encontró información relevante en la base documental."
-    partes = []
-    for r in resultados:
-        titulo = r.metadata.get("titulo", "desconocido")
-        url    = r.metadata.get("url", "")
-        partes.append(f"[Fuente: {titulo} | {url}]\n{r.page_content}")
-    return "\n\n".join(partes)
+
+# ── Tool 1: RAG Chain de 2 pasos ───────────────────────────────────────────────
+
+@tool(response_format="content_and_artifact")
+def retrieve_context(pregunta: str):
+    """Usa esta herramienta para responder preguntas abiertas sobre Colgate-Palmolive:
+    su historia, valores corporativos, productos, operaciones globales, sostenibilidad,
+    programas sociales, noticias o cualquier tema que requiera contexto narrativo.
+
+    Implementa RAG Chain de 2 pasos:
+    - Paso 1 (Retrieve): busca en FAISS los chunks más similares semánticamente.
+    - Paso 2 (Generate): formatea Source + Content para que el modelo genere la respuesta.
+
+    Input: la pregunta del usuario tal como fue formulada.
+    """
+    retrieved_docs = _vectorstore.similarity_search(pregunta, k=RAG_TOP_K)
+    if not retrieved_docs:
+        return "No se encontró información relevante en la base documental.", []
+
+    serialized = "\n\n".join(
+        f"Source: {doc.metadata}\nContent: {doc.page_content}"
+        for doc in retrieved_docs
+    )
+    return serialized, retrieved_docs
+
 
 # ── Tool 2: Datos estructurados ────────────────────────────────────────────────
-def buscar_en_datos_estructurados(pregunta: str) -> str:
-    """Busca datos concretos en el JSON estructurado mediante keyword matching normalizado.
-    No usa vectorstore: la recuperación es determinista y siempre precisa para datos de contacto,
-    horarios, NIT, sedes, marcas, programas sociales y sostenibilidad."""
-    q = _normalizar(pregunta)
 
-    # ── 1. Palabras clave específicas primero (prioridad sobre FAQs) ───────────
-    # El orden importa: las categorías más específicas se evalúan antes para
-    # evitar que el scoring de FAQs devuelva la categoría equivocada.
+def buscar_en_datos_estructurados(pregunta: str) -> str:
+    """Lógica pura de búsqueda estructurada (sin decorador @tool, testeable de forma aislada).
+
+    Estrategia por capas:
+    1. Detección de intención por palabras clave (mayor precisión).
+    2. Solapamiento de palabras con FAQs como fallback.
+    3. Mensaje de no encontrado.
+    """
+    q = _normalizar(pregunta)
 
     if any(p in q for p in ["horario", "hora", "atienden", "abierto", "cuando abren"]):
         h = _datos_estructurados["horarios_atencion"]
@@ -93,7 +109,9 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
 
     if any(p in q for p in ["sede", "oficina", "direccion", "ubicacion", "planta", "ciudad"]):
         sedes = _datos_estructurados["sedes_colombia"]
-        return "\n".join(f"- {s['ciudad']}: {s['tipo']} ({s['direccion']})" for s in sedes)
+        return "\n".join(
+            f"- {s['ciudad']}: {s['tipo']} ({s['direccion']})" for s in sedes
+        )
 
     if any(p in q for p in ["marca", "producto", "vende", "comercializa", "catalogo"]):
         marcas = _datos_estructurados["marcas_principales_colombia"]
@@ -128,15 +146,13 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
         c = _datos_estructurados["contacto"]
         return f"Línea gratuita: {c['linea_gratuita']} | WhatsApp: {c['whatsapp']}"
 
-    # ── 2. FAQs como fallback cuando no hubo match de categoría ───────────────
+    # Fallback: solapamiento con FAQs
     faqs = _datos_estructurados.get("preguntas_frecuentes", [])
     mejor_faq = None
     mejor_score = 0
-    STOPWORDS = {"cual", "es", "el", "la", "de", "en", "un", "una", "los", "las",
-                 "del", "al", "y", "o", "que", "con", "por", "su", "se"}
     for faq in faqs:
-        palabras_q   = set(_normalizar(pregunta).split()) - STOPWORDS
-        palabras_faq = set(_normalizar(faq["pregunta"]).split()) - STOPWORDS
+        palabras_q = set(_normalizar(pregunta).split()) - _STOPWORDS
+        palabras_faq = set(_normalizar(faq["pregunta"]).split()) - _STOPWORDS
         score = len(palabras_q & palabras_faq)
         if score > mejor_score:
             mejor_score = score
@@ -146,28 +162,20 @@ def buscar_en_datos_estructurados(pregunta: str) -> str:
 
     return "No encontré un dato estructurado específico para esa pregunta."
 
-# ── Definición formal de las tools ────────────────────────────────────────────
-tool_rag = Tool(
-    name="base_documental",
-    func=buscar_en_base_documental,
-    description=(
-        "Usa esta herramienta para responder preguntas abiertas sobre Colgate-Palmolive: "
-        "su historia, valores corporativos, productos, operaciones globales, sostenibilidad, "
-        "programas sociales, noticias o cualquier tema que requiera contexto narrativo. "
-        "Input: la pregunta del usuario tal como fue formulada."
-    ),
-)
 
-tool_estructurada = Tool(
-    name="datos_estructurados",
-    func=buscar_en_datos_estructurados,
-    description=(
-        "Usa esta herramienta para responder preguntas específicas que requieren datos concretos: "
-        "número de teléfono, horarios de atención, NIT, dirección, sedes en Colombia, "
-        "marcas disponibles, sitio web, redes sociales o información de contacto. "
-        "NO uses esta herramienta para preguntas narrativas o de contexto general. "
-        "Input: la pregunta del usuario tal como fue formulada."
-    ),
-)
+@tool
+def datos_estructurados(pregunta: str) -> str:
+    """Usa esta herramienta para responder preguntas específicas que requieren datos concretos:
+    número de teléfono, horarios de atención, NIT, dirección, sedes en Colombia,
+    marcas disponibles, sitio web, redes sociales o información de contacto.
 
-TOOLS = [tool_rag, tool_estructurada]
+    No usa vectorstore: la recuperación es determinista y siempre precisa.
+    NO uses esta herramienta para preguntas narrativas o de contexto general.
+
+    Input: la pregunta del usuario tal como fue formulada.
+    """
+    return buscar_en_datos_estructurados(pregunta)
+
+
+# ── Lista de herramientas para el agente ───────────────────────────────────────
+TOOLS = [retrieve_context, datos_estructurados]

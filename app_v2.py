@@ -4,23 +4,30 @@ from pathlib import Path
 
 import streamlit as st
 
-# ── Helpers (sin importar agent al arranque) ───────────────────────────────────
+from config import ERROR_GENERICO, ERROR_RATE_LIMIT, COOKIE_MAX_AGE
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
 def _logo_b64() -> str:
-    p = Path("assets/logo.png")
-    if p.exists():
-        return base64.b64encode(p.read_bytes()).decode()
-    return ""
+    p = Path(__file__).parent / "assets" / "logo.png"
+    return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
 
-LOGO_B64    = _logo_b64()
-AVATAR_BOT  = "🦷"
-AVATAR_USER = "👤"
 
-# Centinelas replicados para no depender del import de agent
-ERROR_GENERICO   = "__ERROR__"
-ERROR_RATE_LIMIT = "__RATE_LIMIT__"
-
-def nueva_sesion() -> str:
+def _nuevo_thread_id() -> str:
     return str(uuid.uuid4())
+
+
+def _cookie_attr(thread_id: str) -> str:
+    return f"thread_id={thread_id};path=/;max-age={COOKIE_MAX_AGE};SameSite=Lax"
+
+
+def _set_cookie_script(thread_id: str) -> str:
+    return f"<script>document.cookie='{_cookie_attr(thread_id)}'</script>"
+
+
+LOGO_B64 = _logo_b64()
+AVATAR_BOT = "🦷"
+AVATAR_USER = "👤"
 
 BIENVENIDA = (
     "¡Hola! Soy el asistente virtual de **Colgate-Palmolive Colombia**. "
@@ -30,12 +37,10 @@ BIENVENIDA = (
 
 CSS = """
 <style>
-/* Barra superior con color corporativo */
 [data-testid="stHeader"] {
     background: #E31837;
 }
 
-/* Sidebar */
 [data-testid="stSidebar"] {
     background: #091D30;
 }
@@ -57,13 +62,11 @@ CSS = """
     background: #c01530;
 }
 
-/* Título principal */
 h1 {
     color: #E31837 !important;
     font-weight: 700 !important;
 }
 
-/* Burbuja del asistente */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]),
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarImage"]) {
     background: #F4F6FA;
@@ -71,47 +74,46 @@ h1 {
     border-radius: 0 8px 8px 0;
 }
 
-/* Input de chat */
 [data-testid="stChatInput"] textarea {
     border: 1.5px solid #E31837 !important;
     border-radius: 8px !important;
 }
 
-/* Ocultar footer de Streamlit */
 footer { display: none !important; }
 </style>
 """
 
-# ── Configuración de la página ─────────────────────────────────────────────────
+# ── Configuración de página ────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Colgate-Palmolive · Asistente Virtual",
     page_icon="🦷",
     layout="wide",
 )
-
 st.markdown(CSS, unsafe_allow_html=True)
 
-# ── Carga del agente con spinner (solo la primera vez) ─────────────────────────
+
+# ── Carga lazy del agente (solo la primera vez) ────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def _cargar_agente():
     from agent import preguntar_con_pasos as _fn
     return _fn
 
+
 with st.spinner("⚙️ Iniciando el asistente virtual, un momento..."):
     preguntar_con_pasos = _cargar_agente()
+
 
 # ── Estado de sesión ───────────────────────────────────────────────────────────
 if "thread_id" not in st.session_state:
     thread_id = st.context.cookies.get("thread_id")
     if not thread_id:
-        thread_id = nueva_sesion()
-        st.components.v1.html(
-            f"<script>document.cookie='thread_id={thread_id};path=/;max-age=2592000;SameSite=Lax'</script>",
-            height=0,
-        )
+        thread_id = _nuevo_thread_id()
+        st.components.v1.html(_set_cookie_script(thread_id), height=0)
     st.session_state.thread_id = thread_id
+
 if "mensajes" not in st.session_state:
     st.session_state.mensajes = []
+
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -135,21 +137,20 @@ with st.sidebar:
     st.divider()
 
     if st.button("Nueva conversación", use_container_width=True):
-        nuevo_id = nueva_sesion()
+        nuevo_id = _nuevo_thread_id()
         st.session_state.thread_id = nuevo_id
         st.session_state.mensajes = []
         st.components.v1.html(
-            f"""<script>
-            document.cookie='thread_id={nuevo_id};path=/;max-age=2592000';
-            window.location.reload();
-            </script>""",
+            f"<script>document.cookie='{_cookie_attr(nuevo_id)}';window.location.reload();</script>",
             height=0,
         )
+
 
 # ── Cabecera ───────────────────────────────────────────────────────────────────
 st.title("Asistente Virtual Colgate-Palmolive")
 st.caption("Respuestas basadas en información oficial de Colgate-Palmolive Colombia.")
 st.divider()
+
 
 # ── Historial ──────────────────────────────────────────────────────────────────
 if not st.session_state.mensajes:
@@ -160,6 +161,7 @@ for msg in st.session_state.mensajes:
     avatar = AVATAR_BOT if msg["role"] == "assistant" else AVATAR_USER
     with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
+
 
 # ── Input ──────────────────────────────────────────────────────────────────────
 if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
@@ -175,12 +177,12 @@ if pregunta := st.chat_input("Escribe tu pregunta sobre Colgate-Palmolive..."):
             msg = "El servicio está temporalmente saturado. Espera unos segundos e intenta de nuevo."
             st.warning(msg)
             respuesta = f"⏱️ {msg}"
-            st.session_state.thread_id = nueva_sesion()
+            st.session_state.thread_id = _nuevo_thread_id()
         elif respuesta == ERROR_GENERICO:
             msg = "Lo siento, ocurrió un error al procesar tu pregunta. Por favor intenta de nuevo."
             st.error(msg)
             respuesta = msg
-            st.session_state.thread_id = nueva_sesion()
+            st.session_state.thread_id = _nuevo_thread_id()
         else:
             st.markdown(respuesta.replace("$", r"\$"))
             if pasos:
